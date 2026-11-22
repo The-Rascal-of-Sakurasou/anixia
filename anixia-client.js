@@ -5,12 +5,30 @@
   const KEY = "sb_publishable_UiVRBLbMIAy-1GZqVY35Zw_uEp-W_GJ";
   let instance;
 
+  // Prevent Supabase requests from leaving page sections in a permanent loading state.
+  function fetchWithTimeout(input, init = {}) {
+    if (!w.AbortController) return w.fetch(input, init);
+    const controller = new w.AbortController();
+    const sourceSignal = init.signal;
+    const relayAbort = () => controller.abort();
+    if (sourceSignal) {
+      if (sourceSignal.aborted) controller.abort();
+      else sourceSignal.addEventListener("abort", relayAbort, { once: true });
+    }
+    const timer = w.setTimeout(() => controller.abort(), 30000);
+    return w.fetch(input, { ...init, signal: controller.signal }).finally(() => {
+      w.clearTimeout(timer);
+      sourceSignal?.removeEventListener("abort", relayAbort);
+    });
+  }
+
   function getClient() {
     if (instance) return instance;
     if (!w.supabase || typeof w.supabase.createClient !== "function") {
       throw new Error("Supabase SDK is not loaded.");
     }
     instance = w.supabase.createClient(URL, KEY, {
+      global: { fetch: fetchWithTimeout },
       auth: {
         persistSession: true,
         autoRefreshToken: true,
