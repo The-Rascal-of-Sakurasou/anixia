@@ -237,7 +237,7 @@
         await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2", "data-anixia-supabase-sdk");
       }
       if (!window.ANIXIA || typeof window.ANIXIA.getClient !== "function") {
-        await loadScript(ROOT + "anixia-client.js", "data-anixia-auth-client");
+        await loadScript(ROOT + "anixia-client.js?v=20261122-timeout-1", "data-anixia-auth-client");
       }
       const client = window.ANIXIA.getClient();
       const {data,error} = await client.auth.getUser();
