@@ -317,9 +317,62 @@
     window.addEventListener("pageshow", updateFooterSpace);
   }
 
+  function installBreadcrumb() {
+    const path = location.pathname.split("/").pop() || "index.html";
+    if (path === "index.html" || document.querySelector(".anixia-breadcrumb")) return;
+    const main = document.querySelector("main");
+    if (!main) return;
+    const labels = {
+      "anime.html":"作品データベース","anime-detail.html":"作品詳細","season.html":"今期アニメ",
+      "ranking.html":"ランキング","recommendations.html":"おすすめ診断","quiz.html":"クイズ",
+      "quiz-play.html":"クイズに挑戦","mypage.html":"マイページ","community.html":"コミュニティ",
+      "discover.html":"作品を探す","entities.html":"人物・団体","entity-detail.html":"人物・団体の詳細",
+      "login.html":"ログイン","signup.html":"新規登録","terms.html":"利用規約",
+      "privacy.html":"プライバシーポリシー","operator.html":"運営情報","data-sources.html":"データ出典",
+      "genres.html":"ジャンル","compare.html":"作品比較","profile.html":"プロフィール",
+      "user-search.html":"ユーザー検索","messages.html":"メッセージ","memo.html":"メモ"
+    };
+    const label = labels[path] || (document.title.split(/[｜|]/)[0] || "ANIXIA").trim();
+    const nav = document.createElement("nav");
+    nav.className = "anixia-breadcrumb";
+    nav.setAttribute("aria-label", "パンくずリスト");
+    const list = document.createElement("ol");
+    const addItem = (text, href, current) => {
+      const item = document.createElement("li");
+      if (href) {
+        const link = document.createElement("a");
+        link.href = ROOT + href;
+        link.textContent = text;
+        item.appendChild(link);
+      } else {
+        const span = document.createElement("span");
+        span.textContent = text;
+        if (current) span.setAttribute("aria-current", "page");
+        item.appendChild(span);
+      }
+      list.appendChild(item);
+    };
+    addItem("トップ", "", false);
+    if (path === "anime-detail.html") {
+      addItem("作品データベース", "anime.html", false);
+      addItem(main.querySelector("h1")?.textContent?.trim() || label, "", true);
+    } else if (path === "entity-detail.html") {
+      addItem("人物・団体", "entities.html", false);
+      addItem(main.querySelector("h1")?.textContent?.trim() || label, "", true);
+    } else if (["profile.html","messages.html","user-search.html"].includes(path)) {
+      addItem("コミュニティ", "community.html", false);
+      addItem(label, "", true);
+    } else {
+      addItem(label, "", true);
+    }
+    nav.appendChild(list);
+    main.parentNode.insertBefore(nav, main);
+  }
+
   function init() {
     addStyles();
     installHeader();
+    installBreadcrumb();
     installFooter();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded",init,{once:true});
