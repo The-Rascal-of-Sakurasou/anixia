@@ -22,4 +22,11 @@ html[data-anixia-theme="dark"] body :is(.anixia-section-heading,.anixia-search-m
 html[data-anixia-theme="dark"] body :is(.anixia-search-form,.hero-search,.header-search){background:#0d1727!important;border-color:#3a4b63!important}
 html[data-anixia-theme="dark"] body :is(.anixia-search-form input,.hero-search input,.header-search input){background:#0d1727!important;color:#e8eef7!important;border-color:#3a4b63!important}
 
+
+/* Legal, policy and community-specific surfaces */
+html[data-anixia-theme="dark"] body :is(.policy-box,.reply-box,.bookmarks,.side-title,.photo-btn,.photo-clear,.photo-preview-item,.tabs,.tab,.error){background:#141f30!important;background-color:#141f30!important;border-color:#2b3a50!important;color:#e8eef7!important}
+html[data-anixia-theme="dark"] body .policy-box :is(h1,h2,h3,h4,p,li,dt,dd,small,strong){color:#e8eef7!important}
+html[data-anixia-theme="dark"] body :is(.photo-btn,.photo-clear,.reply-box,.tab,.tabs,.search-box,.bookmarks) :is(label,small,p,span,strong){color:#e8eef7!important}
+html[data-anixia-theme="dark"] body :is(.post-meta,.post-actions,.count,.side-title,.updated,.policy-box .updated){color:#a7b4c6!important}
+
 @media(prefers-reduced-motion:reduce){html[data-anixia-theme] *{transition-duration:.01ms!important}}
