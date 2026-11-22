@@ -2,7 +2,8 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 
 const root = process.cwd();
-const SUPABASE_ORIGIN = "https://bhgdjuwlxvbaeraaivmh.supabase.co";
+const LEGACY_SUPABASE_ORIGIN = "https://bhgdjuwlxvbaeraaivmh.supabase.co";
+const SUPABASE_ORIGIN = "https://trvnxggqzlhqdhoyiliy.supabase.co";
 const CDN_ORIGIN = "https://cdn.jsdelivr.net";
 
 async function walk(dir) {
@@ -17,8 +18,18 @@ async function walk(dir) {
 }
 
 function addHeadLink(html, href, tag) {
-  if (html.includes('href="' + href + '"')) return html;
-  return html.replace(/<\/head>/i, tag + "\n</head>");
+  if (html.includes('href="' + href + '"') || html.includes("href='" + href + "'")) return html;
+  return html.replace(/<\\/head>/i, tag + "\\n</head>");
+}
+
+function dedupeHeadLink(html, href) {
+  let seen = false;
+  return html.replace(/<link\\b[^>]*>/gi, link => {
+    if (!link.includes('href="' + href + '"') && !link.includes("href='" + href + "'")) return link;
+    if (seen) return "";
+    seen = true;
+    return link;
+  });
 }
 
 function optimize(html, file) {
@@ -38,11 +49,17 @@ function optimize(html, file) {
       '<script src="' + performanceScript + '" defer></script>\n</head>');
   }
 
-  if (html.includes("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2")) {
+  // Remove the retired project hint before adding the active Supabase origin.
+  html = html.replace(/<link\\b[^>]*href=["']https:\\/\\/bhgdjuwlxvbaeraaivmh\\.supabase\\.co["'][^>]*>\\s*/gi, "");
+
+  if (html.includes("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2") ||
+      html.includes("anixia-client.js") || html.includes("auth-core.js")) {
     html = addHeadLink(html, SUPABASE_ORIGIN,
       '<link rel="preconnect" href="' + SUPABASE_ORIGIN + '">');
+    html = dedupeHeadLink(html, SUPABASE_ORIGIN);
     html = addHeadLink(html, CDN_ORIGIN,
       '<link rel="preconnect" href="' + CDN_ORIGIN + '" crossorigin>');
+    html = dedupeHeadLink(html, CDN_ORIGIN);
     html = html.replace(/<link\s+rel="preload"\s+as="script"\s+href="[^"]*supabase-js@2"[^>]*>\s*/g, "");
     // Pages currently initialize Supabase from inline scripts during parsing.
     // Keep the SDK synchronous until all pages use an explicit SDK-ready gate.
