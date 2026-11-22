@@ -1,4 +1,4 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#080d18"><title>クイズに挑戦｜ANIXIA</title><meta name="robots" content="noindex,follow"><style>
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#080d18"><title>クイズに挑戦｜ANIXIA</title><meta name="description" content="ANIXIAのアニメクイズに挑戦し、スコアと解説を確認できます。"><meta name="robots" content="noindex,follow"><style>
 .play-page{width:min(1000px,calc(100% - 36px));margin:0 auto;padding:30px 0 70px;color:#111}
 .play-head,.question-card,.result-card{padding:22px;border:1px solid #e5e7eb!important;border-radius:14px!important;background:#fff!important;color:#111!important;box-shadow:0 3px 14px rgba(0,0,0,.045)!important;margin:0 0 14px}
 .play-head small{color:#03AF6A!important;font-size:10px;font-weight:900;letter-spacing:.16em}
@@ -15,17 +15,19 @@
 .result-score{font-size:32px;color:#03AF6A!important;font-weight:950}
 .result-card h2{color:#111!important}
 .result-card p{color:#555!important;font-size:13px}
+.quiz-share{display:inline-flex;align-items:center;justify-content:center;margin:8px 0 14px;padding:10px 15px;border:1px solid #1d9bf0;border-radius:8px;background:#1d9bf0;color:#fff!important;text-decoration:none;font-size:12px;font-weight:850}
 .explanation{padding:11px 0;border-top:1px solid #e5e7eb;color:#555!important;font-size:12px;line-height:1.7}
 .explanation b{display:block;color:#111!important;margin-bottom:4px}
 @media(max-width:650px){.play-page{width:calc(100% - 22px);padding:20px 0 55px}.play-head h1{font-size:23px}.question-card,.play-head,.result-card{padding:16px}}
-</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="anixia-client.js"></script><script src="anixia-quiz-play.js" defer></script><script src="performance.js" defer></script>
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="anixia-client.js"></script><script src="anixia-quiz-play.js?v=20261122-x-share1" defer></script><script src="performance.js" defer></script>
 <link rel="preconnect" href="https://trvnxggqzlhqdhoyiliy.supabase.co">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="site-theme.css?v=anixia-design-v5-20261119">
-<link rel="preconnect" href="https://bhgdjuwlxvbaeraaivmh.supabase.co">
+
 
 <link rel="stylesheet" href="/anixia/anixia-unified-theme.css?v=20261121-1">
-<script src="/anixia/anixia-global-header.js?v=20261120-4" defer></script>
+<script src="/anixia/anixia-global-header.js?v=20261122-breadcrumb-1" defer></script>
+<meta property="og:type" content="website"><meta property="og:title" content="クイズに挑戦｜ANIXIA"><meta property="og:description" content="ANIXIAのアニメクイズに挑戦し、スコアと解説を確認できます。"><meta property="og:url" content="https://the-rascal-of-sakurasou.github.io/anixia/quiz-play.html"><meta property="og:site_name" content="ANIXIA"><meta name="twitter:card" content="summary">
 </head><body><header class="site-header"><div class="container nav"><a class="brand" href="index.html">ANIXIA</a><nav class="nav-links"><a href="index.html">ホーム</a><a href="anime.html">作品検索</a><a href="quiz.html">クイズ一覧</a></nav><div class="nav-actions"><a class="nav-btn primary" href="mypage.html">マイページ</a></div></div></header><main class="play-page"><div id="quiz-loading" class="question-card">クイズを読み込んでいます…</div><div id="quiz-area" hidden><section class="play-head"><small>ANIXIA QUIZ</small><h1 id="quiz-title"></h1><p id="quiz-description"></p></section><form id="quiz-form"><div id="questions"></div><div class="play-actions"><button type="submit" id="submit-quiz">回答を送信して採点</button><p class="play-message" id="quiz-message" aria-live="polite"></p></div></form></div><section id="quiz-result" class="result-card" hidden></section></main>
 <script src="anixia-i18n.js?v=20261119-r8" defer></script>
 </body></html>
