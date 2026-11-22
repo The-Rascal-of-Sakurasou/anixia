@@ -127,7 +127,7 @@ jobs:
             'entities.html', 'genres.html',
             'community.html', 'messages.html', 'mypage.html',
             'quiz.html', 'quiz-play.html',
-            'login.html', 'signup.html', 'privacy.html',
+            'login.html', 'signup.html', 'forgot-password.html', 'reset-password.html', 'privacy.html',
             'admin.html'
           ];
           // Add a deterministic sample of generated work and genre pages.
@@ -337,8 +337,10 @@ jobs:
           const failures = [];
           try {
             for (const item of [
-              { path: 'login.html', form: '#login-form', fields: ['email', 'password'] },
-              { path: 'signup.html', form: '#signup-form', fields: ['email', 'password', 'password-confirm'] }
+              { path: 'login.html', form: '#login-form', fields: ['email', 'password'], behaviorScript: 'anixia-auth-pages\\.js' },
+              { path: 'signup.html', form: '#signup-form', fields: ['email', 'password', 'password-confirm'], behaviorScript: 'anixia-auth-pages\\.js' },
+              { path: 'forgot-password.html', form: '#forgot-form', fields: ['email'], behaviorScript: 'anixia-forgot-password\\.js' },
+              { path: 'reset-password.html', form: '#form', fields: ['password', 'password-confirm'], inlineBehavior: true }
             ]) {
               const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
               const pageErrors = [];
@@ -358,9 +360,9 @@ jobs:
                   authScript: [...document.scripts].some(script => /anixia-auth-pages\.js/.test(script.src)),
                   horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth
                 };
-              }, { formSelector: item.form, fields: item.fields });
+              }, { formSelector: item.form, fields: item.fields, behaviorScript: item.behaviorScript, inlineBehavior: item.inlineBehavior });
               if (!response?.ok()) failures.push(item.path + ': HTTP ' + (response?.status() ?? 'no response'));
-              if (!result.formFound || !result.submitFound || !result.clientScript || !result.authScript || result.horizontalOverflow) failures.push(item.path + ': form/scripts/layout check failed: ' + JSON.stringify(result));
+              if (!result.formFound || !result.submitFound || !result.clientScript || !result.behaviorScript || result.horizontalOverflow) failures.push(item.path + ': form/scripts/layout check failed: ' + JSON.stringify(result));
               for (const field of result.fields) if (!field.found || !field.required || !field.label) failures.push(item.path + ': invalid field: ' + JSON.stringify(field));
               if (pageErrors.length) failures.push(item.path + ': browser errors: ' + pageErrors.join('; '));
               console.log(item.path + ': ' + JSON.stringify(result));
