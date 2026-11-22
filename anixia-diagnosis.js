@@ -23,7 +23,10 @@
     $("diagnosis-summary").textContent="診断中…";
     try{
       const results=await ANIXIA.diagnoseAnime(options);
-      $("diagnosis-results").innerHTML=results.length?results.map(a=>`<a class="diag-card" href="anime-detail.html?id=${encodeURIComponent(a.id)}"><div class="anixia-poster anixia-list-poster">${ANIXIA.posterMarkup(a.poster_url,name(a),a.poster_credit)}</div><div class="diag-card-copy"><b>${esc(name(a))}</b><small>ジャンル一致 ${a.match_count}件 · ${esc(a.release_year||"年未登録")}</small></div></a>`).join(""):'<p class="diag-state">条件に合う公開作品がありません。条件を広げるか、作品データの登録後にお試しください。</p>';
+      const resultCards=results.length?results.map(a=>`<a class="diag-card" href="anime-detail.html?id=${encodeURIComponent(a.id)}"><div class="anixia-poster anixia-list-poster">${ANIXIA.posterMarkup(a.poster_url,name(a),a.poster_credit)}</div><div class="diag-card-copy"><b>${esc(name(a))}</b><small>ジャンル一致 ${a.match_count}件 · ${esc(a.release_year||"年未登録")}</small></div></a>`).join(""):'<p class="diag-state">条件に合う公開作品がありません。条件を広げるか、作品データの登録後にお試しください。</p>';
+      const shareText=`ANIXIAのおすすめアニメ診断結果：${results.slice(0,3).map(name).join("、")} #ANIXIA #おすすめアニメ`;
+      const shareUrl="https://twitter.com/intent/tweet?text="+encodeURIComponent(shareText)+"&url="+encodeURIComponent(location.href);
+      $("diagnosis-results").innerHTML=resultCards+(results.length?`<a class="diag-share" href="${esc(shareUrl)}" target="_blank" rel="noopener noreferrer">診断結果をXでシェアする</a>`:"");
       $("diagnosis-summary").textContent=results.length?`条件に合う作品を${results.length}件表示しています。一致ジャンル数と登録済みの人気指標をもとに並べています。`:"診断結果はありません。";
     }catch(error){console.error(error);$("diagnosis-results").innerHTML='<p class="diag-state">診断に失敗しました。時間をおいて再度お試しください。</p>';$("diagnosis-summary").textContent="データベースに接続できませんでした。";}
   });
