@@ -352,13 +352,19 @@
       }
       list.appendChild(item);
     };
-    addItem("トップ", "", false);
+    addItem("トップ", "index.html", false);
     if (path === "anime-detail.html") {
       addItem("作品データベース", "anime.html", false);
-      addItem(main.querySelector("h1")?.textContent?.trim() || label, "", true);
+      const h1 = main.querySelector("h1");
+      addItem(h1?.textContent?.trim() || label, "", true);
+      const current = list.querySelector('[aria-current="page"]');
+      if (h1 && current) new MutationObserver(() => { const text = h1.textContent.trim(); if (text) current.textContent = text; }).observe(h1, {childList:true,subtree:true,characterData:true});
     } else if (path === "entity-detail.html") {
       addItem("人物・団体", "entities.html", false);
-      addItem(main.querySelector("h1")?.textContent?.trim() || label, "", true);
+      const h1 = main.querySelector("h1");
+      addItem(h1?.textContent?.trim() || label, "", true);
+      const current = list.querySelector('[aria-current="page"]');
+      if (h1 && current) new MutationObserver(() => { const text = h1.textContent.trim(); if (text) current.textContent = text; }).observe(h1, {childList:true,subtree:true,characterData:true});
     } else if (["profile.html","messages.html","user-search.html"].includes(path)) {
       addItem("コミュニティ", "community.html", false);
       addItem(label, "", true);
