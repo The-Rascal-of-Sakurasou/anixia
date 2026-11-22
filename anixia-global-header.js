@@ -44,6 +44,7 @@
       .anixia-header-actions .anixia-header-button:hover{background:#028f56!important;border-color:#028f56!important;color:#FFFFFF!important}
       .anixia-header-actions #account-link,.anixia-header-actions #account-link:visited,.anixia-header-actions #account-link:hover{color:#FFFFFF!important}
       .anixia-header-actions [hidden]{display:none!important}
+      .anixia-menu-toggle{display:none!important}
       footer.anixia-global-footer{display:block!important;width:100%!important;margin:64px 0 0!important;padding:0!important;background:#000!important;color:#fff!important;border:0!important;border-top:1px solid #222!important;box-shadow:none!important}
       .anixia-footer-inner{width:100%!important;max-width:1200px!important;margin:0!important;padding:28px 18px 18px!important;box-sizing:border-box!important;text-align:left!important}
       .anixia-footer-main{margin:0 0 18px!important}
@@ -61,19 +62,22 @@
         .anixia-global-nav a{padding:6px 8px!important}
         .anixia-header-actions{grid-column:2!important;grid-row:1!important;margin:0!important}
       }
-      /* Mobile header: stack brand, actions and horizontally scrollable navigation. */
+      /* Mobile header: compact controls with an accessible collapsible navigation. */
       @media(max-width:760px){
-        .anixia-global-header-inner{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto auto!important;align-items:center!important;gap:9px!important;width:100%!important;min-height:0!important;padding:10px 14px!important;box-sizing:border-box!important}
-        .anixia-global-header .anixia-logo{grid-row:1!important;justify-self:start!important;font-size:24px!important}
-        .anixia-header-actions{grid-row:2!important;display:flex!important;flex-wrap:nowrap!important;justify-content:space-between!important;align-items:center!important;gap:7px!important;width:100%!important;min-width:0!important;margin:0!important}
-        .anixia-header-actions .anixia-header-button{flex:1 1 0!important;min-width:0!important;min-height:38px!important;padding:0 7px!important;font-size:12px!important;white-space:nowrap!important}
-        .anixia-global-nav{grid-row:3!important;display:flex!important;flex:0 0 auto!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:flex-start!important;gap:5px!important;width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:0 0 2px!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;overscroll-behavior-x:contain!important;-webkit-overflow-scrolling:touch!important}
-        .anixia-global-nav a{flex:0 0 auto!important;display:inline-flex!important;min-width:max-content!important;padding:7px 9px!important;font-size:12px!important;line-height:1.4!important;white-space:nowrap!important}
+        .anixia-global-header-inner{display:flex!important;align-items:center!important;justify-content:space-between!important;flex-wrap:wrap!important;gap:8px!important;width:100%!important;min-height:0!important;padding:9px 12px!important;box-sizing:border-box!important;position:relative!important}
+        .anixia-global-header .anixia-logo{font-size:23px!important;flex:0 0 auto!important}
+        .anixia-header-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;flex:0 1 auto!important;gap:5px!important;min-width:0!important;margin:0!important}
+        .anixia-header-actions .anixia-header-button{flex:0 1 auto!important;min-width:0!important;min-height:35px!important;padding:0 9px!important;font-size:11px!important;white-space:nowrap!important}
+        .anixia-menu-toggle{display:inline-flex!important;gap:5px!important;align-items:center!important}
+        .anixia-global-nav{display:none!important;position:absolute!important;top:100%!important;left:0!important;right:0!important;z-index:10000!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:2px!important;width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:8px 12px 14px!important;overflow-y:auto!important;overflow-x:hidden!important;max-height:70vh!important;box-sizing:border-box!important;background:#050505!important;border-bottom:1px solid #292929!important;box-shadow:0 12px 24px rgba(0,0,0,.24)!important}
+        .anixia-global-header[data-menu-open="true"] .anixia-global-nav{display:flex!important}
+        .anixia-global-nav a{display:flex!important;align-items:center!important;min-height:40px!important;padding:9px 12px!important;border-radius:6px!important;font-size:13px!important;white-space:normal!important}
       }
       @media(max-width:420px){
-        .anixia-global-header .anixia-logo{font-size:22px!important}
-        .anixia-header-actions{gap:5px!important}
-        .anixia-header-actions .anixia-header-button{min-height:33px!important;padding:0 8px!important;font-size:11px!important}
+        .anixia-global-header .anixia-logo{font-size:21px!important}
+        .anixia-header-actions{gap:4px!important}
+        .anixia-header-actions .anixia-header-button{min-height:32px!important;padding:0 7px!important;font-size:10px!important}
+        .anixia-menu-label{display:none!important}
       }
       /* Responsive footer: keep it in document flow so it never covers page content. */
       .anixia-global-footer{position:static!important;inset:auto!important;z-index:auto!important;width:100%!important;margin:48px 0 0!important;max-height:none!important;overflow:visible!important}
@@ -124,12 +128,13 @@
     header.innerHTML = `
       <div class="anixia-global-header-inner">
         <a class="anixia-logo" href="${ROOT}" aria-label="ANIXIA ホーム">ANI<span class="anixia-logo-xia">XIA</span></a>
-        <nav class="anixia-global-nav" aria-label="メインナビゲーション">
+        <nav class="anixia-global-nav" id="anixia-global-nav" aria-label="メインナビゲーション">
           ${navItems.map(([label,path]) => `<a href="${ROOT}${path}">${label}</a>`).join("")}
         </nav>
         <div class="anixia-header-actions">
           <a class="anixia-header-button" id="account-link" href="${ROOT}login.html">ログイン</a>
           <button class="anixia-header-button" id="home-logout" type="button" hidden>ログアウト</button>
+          <button class="anixia-header-button anixia-menu-toggle" id="anixia-menu-toggle" type="button" aria-expanded="false" aria-controls="anixia-global-nav" aria-label="メニューを開く"><span aria-hidden="true">☰</span><span class="anixia-menu-label">メニュー</span></button>
           <button class="anixia-header-button" id="language-toggle" type="button">EN</button>
         </div>
       </div>`;
@@ -155,6 +160,25 @@
       else { localStorage.setItem("anixia-language", next); location.reload(); }
     });
 
+    const menuButton = header.querySelector("#anixia-menu-toggle");
+    const closeMenu = () => {
+      header.dataset.menuOpen = "false";
+      menuButton?.setAttribute("aria-expanded", "false");
+      menuButton?.setAttribute("aria-label", "メニューを開く");
+      const label = menuButton?.querySelector(".anixia-menu-label");
+      if (label) label.textContent = "メニュー";
+    };
+    menuButton?.addEventListener("click", () => {
+      const open = header.dataset.menuOpen !== "true";
+      header.dataset.menuOpen = String(open);
+      menuButton.setAttribute("aria-expanded", String(open));
+      menuButton.setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く");
+      const label = menuButton.querySelector(".anixia-menu-label");
+      if (label) label.textContent = open ? "閉じる" : "メニュー";
+    });
+    header.querySelectorAll(".anixia-global-nav a").forEach(link => link.addEventListener("click", closeMenu));
+    document.addEventListener("keydown", event => { if (event.key === "Escape") closeMenu(); });
+    window.addEventListener("resize", () => { if (window.innerWidth > 760) closeMenu(); }, {passive:true});
     // Keep the fixed header in the body; never reparent it during scrolling.
     document.body.prepend(header);
     const removeDuplicateMyPageLinks = () => document.querySelectorAll("#mypage-link").forEach(node => { if (!header.contains(node)) node.remove(); });
