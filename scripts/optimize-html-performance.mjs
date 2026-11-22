@@ -19,12 +19,12 @@ async function walk(dir) {
 
 function addHeadLink(html, href, tag) {
   if (html.includes('href="' + href + '"') || html.includes("href='" + href + "'")) return html;
-  return html.replace(/<\\/head>/i, tag + "\\n</head>");
+  return html.replace(/<\/head>/i, tag + "\n</head>");
 }
 
 function dedupeHeadLink(html, href) {
   let seen = false;
-  return html.replace(/<link\\b[^>]*>/gi, link => {
+  return html.replace(/<link\b[^>]*>/gi, link => {
     if (!link.includes('href="' + href + '"') && !link.includes("href='" + href + "'")) return link;
     if (seen) return "";
     seen = true;
@@ -50,7 +50,7 @@ function optimize(html, file) {
   }
 
   // Remove the retired project hint before adding the active Supabase origin.
-  html = html.replace(/<link\\b[^>]*href=["']https:\\/\\/bhgdjuwlxvbaeraaivmh\\.supabase\\.co["'][^>]*>\\s*/gi, "");
+  html = html.replace(/<link\b[^>]*href=["']https:\/\/bhgdjuwlxvbaeraaivmh\.supabase\.co["'][^>]*>\s*/gi, "");
 
   if (html.includes("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2") ||
       html.includes("anixia-client.js") || html.includes("auth-core.js")) {
