@@ -29,7 +29,7 @@
     if (!document.querySelector('link[data-anixia-theme-styles="true"]')) {
       const themeStyle = document.createElement("link");
       themeStyle.rel = "stylesheet";
-      themeStyle.href = ROOT + "anixia-theme.css?v=20261122-1";
+      themeStyle.href = ROOT + "anixia-theme.css?v=20261122-2";
       themeStyle.dataset.anixiaThemeStyles = "true";
       document.head.appendChild(themeStyle);
     }
