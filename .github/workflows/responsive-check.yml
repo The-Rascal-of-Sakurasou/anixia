@@ -203,8 +203,8 @@ jobs:
                     failures.push(`${path || '/'} @ ${width}px: header is not fixed at the top or body clearance is insufficient (${JSON.stringify({header:result.header,paddingTop:result.bodyPaddingTop})})`);
                     hasFailure = true;
                   }
-                  if (!result.footer || result.footer.position !== 'fixed' || Math.abs(result.footer.bottom - 900) > 2 || result.footer.height < 1 || result.bodyPaddingBottom < result.footer.height - 2) {
-                    failures.push(`${path || '/'} @ ${width}px: footer is not fixed at the bottom or body clearance is insufficient (${JSON.stringify({footer:result.footer,paddingBottom:result.bodyPaddingBottom})})`);
+                  if (!result.footer || result.footer.position === 'fixed' || result.footer.height < 1 || result.bodyPaddingBottom > 2) {
+                    failures.push((path || '/') + ' @ ' + width + 'px: footer must remain in normal document flow (' + JSON.stringify({footer:result.footer,paddingBottom:result.bodyPaddingBottom}) + ')');
                     hasFailure = true;
                   }
                   for (const message of pageErrors) {
@@ -250,6 +250,29 @@ jobs:
             await page.click('#language-toggle');
             await page.waitForFunction(() => document.documentElement.lang === 'ja');
             console.log('Japanese / English switching and cross-page persistence passed.');
+          } finally { await browser.close(); }
+          NODE
+      - name: Check persistent dark mode
+        env:
+          BASE_URL: https://the-rascal-of-sakurasou.github.io/anixia/
+        run: |
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
+          const browser = await chromium.launch({ headless: true });
+          const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+          try {
+            await page.goto(process.env.BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+            await page.waitForSelector('#anixia-theme-toggle', { timeout: 15000 });
+            await page.click('#anixia-theme-toggle');
+            await page.waitForFunction(() => document.documentElement.dataset.anixiaTheme === 'dark');
+            if (await page.evaluate(() => localStorage.getItem('anixia-theme')) !== 'dark') throw new Error('Dark theme preference was not saved.');
+            await page.goto(new URL('anime.html', process.env.BASE_URL).href, { waitUntil: 'domcontentloaded', timeout: 30000 });
+            await page.waitForSelector('#anixia-theme-toggle', { timeout: 15000 });
+            await page.waitForFunction(() => document.documentElement.dataset.anixiaTheme === 'dark');
+            await page.click('#anixia-theme-toggle');
+            await page.waitForFunction(() => document.documentElement.dataset.anixiaTheme === 'light');
+            if (await page.evaluate(() => localStorage.getItem('anixia-theme')) !== 'light') throw new Error('Light theme preference was not saved.');
+            console.log('Dark/light switching and cross-page preference persistence passed.');
           } finally { await browser.close(); }
           NODE
       - name: Verify home, quiz and recommendation page headers and panels
