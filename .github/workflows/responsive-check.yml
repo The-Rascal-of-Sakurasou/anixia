@@ -327,6 +327,52 @@ jobs:
           }
           console.log('Home, quiz and recommendation header/panel checks passed.');
           NODE
+      - name: Verify login and signup forms without submitting credentials
+        env:
+          BASE_URL: https://the-rascal-of-sakurasou.github.io/anixia/
+        run: |
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
+          const browser = await chromium.launch({ headless: true });
+          const failures = [];
+          try {
+            for (const item of [
+              { path: 'login.html', form: '#login-form', fields: ['email', 'password'] },
+              { path: 'signup.html', form: '#signup-form', fields: ['email', 'password', 'password-confirm'] }
+            ]) {
+              const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+              const pageErrors = [];
+              page.on('pageerror', error => pageErrors.push(error.message));
+              const response = await page.goto(new URL(item.path, process.env.BASE_URL).href, { waitUntil: 'networkidle', timeout: 45000 });
+              const result = await page.evaluate(({ formSelector, fields }) => {
+                const form = document.querySelector(formSelector);
+                return {
+                  formFound: !!form,
+                  submitFound: !!form?.querySelector('button[type="submit"]'),
+                  fields: fields.map(id => {
+                    const input = document.getElementById(id);
+                    const label = input && document.querySelector('label[for="' + id + '"]');
+                    return { id, found: !!input, required: !!input?.required, label: !!label, type: input?.type };
+                  }),
+                  clientScript: [...document.scripts].some(script => /anixia-client\.js\?v=20261122-timeout-1/.test(script.src)),
+                  authScript: [...document.scripts].some(script => /anixia-auth-pages\.js/.test(script.src)),
+                  horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth
+                };
+              }, { formSelector: item.form, fields: item.fields });
+              if (!response?.ok()) failures.push(item.path + ': HTTP ' + (response?.status() ?? 'no response'));
+              if (!result.formFound || !result.submitFound || !result.clientScript || !result.authScript || result.horizontalOverflow) failures.push(item.path + ': form/scripts/layout check failed: ' + JSON.stringify(result));
+              for (const field of result.fields) if (!field.found || !field.required || !field.label) failures.push(item.path + ': invalid field: ' + JSON.stringify(field));
+              if (pageErrors.length) failures.push(item.path + ': browser errors: ' + pageErrors.join('; '));
+              console.log(item.path + ': ' + JSON.stringify(result));
+              await page.close();
+            }
+          } finally { await browser.close(); }
+          if (failures.length) {
+            console.error(failures.join('\\n'));
+            process.exit(1);
+          }
+          console.log('Login/signup forms, labels, required fields and scripts passed. No credentials were submitted.');
+          NODE
       - name: Upload failure screenshots
         if: always()
         uses: actions/upload-artifact@v4
