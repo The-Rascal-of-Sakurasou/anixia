@@ -346,7 +346,7 @@ jobs:
               const pageErrors = [];
               page.on('pageerror', error => pageErrors.push(error.message));
               const response = await page.goto(new URL(item.path, process.env.BASE_URL).href, { waitUntil: 'networkidle', timeout: 45000 });
-              const result = await page.evaluate(({ formSelector, fields }) => {
+              const result = await page.evaluate(({ formSelector, fields, behaviorScript, inlineBehavior }) => {
                 const form = document.querySelector(formSelector);
                 return {
                   formFound: !!form,
@@ -357,7 +357,9 @@ jobs:
                     return { id, found: !!input, required: !!input?.required, label: !!label, type: input?.type };
                   }),
                   clientScript: [...document.scripts].some(script => /anixia-client\.js\?v=20261122-timeout-1/.test(script.src)),
-                  authScript: [...document.scripts].some(script => /anixia-auth-pages\.js/.test(script.src)),
+                  behaviorScript: inlineBehavior
+                    ? [...document.scripts].some(script => !script.src && script.textContent.includes('auth.getSession'))
+                    : [...document.scripts].some(script => new RegExp(behaviorScript).test(script.src)),
                   horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth
                 };
               }, { formSelector: item.form, fields: item.fields, behaviorScript: item.behaviorScript, inlineBehavior: item.inlineBehavior });
@@ -373,7 +375,7 @@ jobs:
             console.error(failures.join('\\n'));
             process.exit(1);
           }
-          console.log('Login/signup forms, labels, required fields and scripts passed. No credentials were submitted.');
+          console.log('Login, signup and password recovery forms, labels, required fields and scripts passed. No credentials were submitted.');
           NODE
       - name: Upload failure screenshots
         if: always()
