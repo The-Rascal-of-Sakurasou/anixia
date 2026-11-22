@@ -1,175 +1,87 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#080d18"><title>ANIXIA管理画面</title><meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080d18">
+<title>ANIXIA管理画面</title>
+<meta name="robots" content="noindex,nofollow">
 <link rel="stylesheet" href="site-theme.css?v=anixia-design-v6-20261121">
 <style>
-.admin-page{width:min(850px,calc(100% - 36px));margin:35px auto 70px}
-.admin-panel{padding:24px;border:1px solid #293b56;border-radius:15px;background:#111b2b;margin-bottom:14px}
-.admin-panel h1,.admin-panel h2{color:#fff;margin-top:0}
-.admin-panel p{font-size:12px;line-height:1.8;color:#aebbd0}
-.admin-field{display:grid;gap:6px;margin:13px 0}
-.admin-field label{font-size:11px;color:#aebbd0;font-weight:800}
-.admin-field input,.admin-field select{height:42px;border:1px solid #30435f;border-radius:8px;background:#0b1423;color:#fff;padding:0 10px}
-.admin-button{border:0;border-radius:8px;padding:11px 16px;background:#f2a51a;color:#171b22;font-weight:900}
+.admin-page{width:min(1000px,calc(100% - 32px));margin:32px auto 70px}
+.admin-panel{padding:22px;border:1px solid #293b56;border-radius:15px;background:#111b2b;margin-bottom:16px}
+.admin-panel h1,.admin-panel h2,.admin-panel h3{color:#fff;margin-top:0}
+.admin-panel p{font-size:13px;line-height:1.8;color:#aebbd0}
 .admin-message{font-size:12px;color:#f2b84d;white-space:pre-wrap}
-.admin-code{display:block;padding:10px;border-radius:8px;background:#0b1423;color:#dbe4f0;font:11px monospace;overflow-wrap:anywhere}
-.admin-warning{border-left:3px solid #f2a51a;padding:10px 12px;background:#241d12;color:#d8c39d;font-size:11px;line-height:1.7}
+.admin-button{border:0;border-radius:8px;padding:10px 14px;background:#f2a51a;color:#171b22;font-weight:800;cursor:pointer}
+.admin-button.secondary{background:#263750;color:#e6edf7}
+.admin-button.danger{background:#8f343b;color:#fff}
+.admin-button:disabled{opacity:.5;cursor:not-allowed}
+.admin-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+.admin-toolbar input,.admin-toolbar select{min-height:40px;border:1px solid #30435f;border-radius:8px;background:#0b1423;color:#fff;padding:8px 10px;min-width:min(100%,280px)}
+.admin-list{display:grid;gap:12px}
+.admin-item{border:1px solid #30435f;border-radius:10px;background:#0b1423;padding:15px}
+.admin-item h3{font-size:15px;margin:0 0 8px}
+.admin-item p{margin:6px 0;overflow-wrap:anywhere}
+.admin-meta{font-size:11px;color:#9cabc1}
+.admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.admin-actions select{min-height:36px;border:1px solid #30435f;border-radius:7px;background:#111b2b;color:#fff;padding:6px}
+.admin-empty{padding:22px;text-align:center;color:#9cabc1;border:1px dashed #30435f;border-radius:10px}
+.admin-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.admin-tabs button[aria-pressed="true"]{outline:2px solid #f2a51a}
+@media(max-width:600px){.admin-panel{padding:16px}.admin-page{width:calc(100% - 20px);margin-top:18px}.admin-item{padding:12px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="anixia-client.js?v=20261121-anilist-poster-sync1"></script><script src="anixia-admin.js?v=20261121-anilist-poster-sync1" defer></script>
+<script src="anixia-client.js?v=20261121-anilist-poster-sync1"></script>
+<script src="anixia-admin.js?v=20261122-user-admin-v1" defer></script>
 <link rel="preconnect" href="https://trvnxggqzlhqdhoyiliy.supabase.co" crossorigin>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-
-<link rel="preconnect" href="https://trvnxggqzlhqdhoyiliy.supabase.co">
 <script src="/anixia/anixia-global-header.js?v=20261120-4" defer></script>
-<link rel="preconnect" href="https://bhgdjuwlxvbaeraaivmh.supabase.co">
-
 <link rel="stylesheet" href="/anixia/anixia-unified-theme.css?v=20261121-1">
-
 </head>
 <body>
 <header class="site-header"><div class="container nav"><a class="brand" href="index.html">ANIXIA</a><nav class="nav-links"><a href="index.html">ホーム</a><a href="anime.html">作品検索</a><a href="mypage.html">マイページ</a></nav></div></header>
 <main class="admin-page">
-<section class="admin-panel"><h1>ANIXIA管理画面</h1><p>カタログ同期と管理者専用処理を実行します。</p><div id="admin-status" class="admin-message">認証状態を確認しています…</div><p class="admin-message"><a href="login.html?redirect=admin.html">ログイン</a> / <a href="signup.html">新規登録</a></p></section>
-<section id="admin-setup" class="admin-panel" hidden><h2>管理者権限がありません</h2><p>以下のアカウントIDをサーバー側の管理者リストへ登録する必要があります。</p><code id="user-id" class="admin-code"></code><p><a href="https://github.com/The-Rascal-of-Sakurasou/anixia/blob/main/docs/ADMIN_SETUP.md" target="_blank" rel="noopener noreferrer">初回管理者登録の手順</a></p><p class="admin-warning">管理者権限はサーバー側で付与します。ブラウザから自分で変更する機能はありません。</p></section>
-<section id="admin-sync" class="admin-panel" hidden><h2>Annict作品データ同期</h2><p>1回につき最大5ページ、1ページ50作品を取得します。取得した候補は非公開で保存し、管理者が内容を確認してから公開します。</p><p class="admin-warning">Annict APIが提供する作品画像は権利者の許諾を意味しないため取得しません。日本作品・対象形式・成人向けでないこと・情報の正確性を確認してから公開してください。</p><p class="admin-warning">SupabaseのEdge Function Secretsへ <code>ANNICT_ACCESS_TOKEN</code> を登録してください。トークンをこの画面や公開コードへ入力しないでください。</p><p><a href="https://github.com/The-Rascal-of-Sakurasou/anixia/blob/main/docs/ADMIN_SETUP.md" target="_blank" rel="noopener noreferrer">Annictトークンと初回同期の設定手順</a></p>
-<div class="admin-field"><label for="start-page">開始ページ</label><input id="start-page" type="number" min="1" value="1"></div>
-<div class="admin-field"><label for="max-pages">1回の取得ページ数</label><select id="max-pages"><option value="1">1ページ</option><option value="2">2ページ</option><option value="3" selected>3ページ</option><option value="4">4ページ</option><option value="5">5ページ</option></select></div>
-<div style="display:flex;gap:10px;flex-wrap:wrap"><button id="preview-button" class="admin-button" type="button">取得候補をプレビュー</button><button id="sync-button" class="admin-button" type="button">同期を開始</button><button id="continue-sync-button" class="admin-button" type="button" hidden>次のページから続行</button></div><p id="sync-message" class="admin-message" aria-live="polite"></p><pre id="sync-preview" class="admin-message" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
-
-<section class="admin-panel" id="wikidata-sync-panel">
-  <h2>Wikidata自動作品収録</h2>
-  <p>Wikidataから日本由来のアニメ作品候補を定期取得します。自動処理は毎日11:30（日本時間）に最大50件を順次確認します。新規レコードは非公開で登録し、既存作品の編集内容・公開状態は上書きしません。必要な場合は下のボタンから手動実行できます。</p>
-  <p class="admin-warning">作品名・形式・公開年・話数などの構造化情報のみを取得します。画像・バナー・あらすじ本文は取得しません。自動登録後も「作品候補の審査」で対象作品かどうかを確認してから公開してください。</p>
-  <div class="admin-field"><label for="wikidata-limit">1回の取得上限</label><select id="wikidata-limit"><option value="25">25件</option><option value="50" selected>50件</option><option value="100">100件</option></select></div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><button id="wikidata-preview-button" class="admin-button" type="button">次回取得候補を確認</button><button id="wikidata-sync-button" class="admin-button" type="button">今すぐ同期</button><button id="wikidata-mal-id-sync-button" class="admin-button" type="button">既存作品のMyAnimeList IDを照合</button></div>
-  <p id="wikidata-sync-message" class="admin-message" aria-live="polite"></p>
-  <pre id="wikidata-sync-preview" class="admin-message" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
-  <p><a href="https://www.wikidata.org/wiki/Wikidata:Licensing" target="_blank" rel="noopener noreferrer">Wikidataのライセンス</a> · <a href="https://www.mediawiki.org/wiki/Wikidata_Query_Service/User_Manual/ja" target="_blank" rel="noopener noreferrer">Query Serviceの利用上の注意</a></p>
+<section class="admin-panel">
+<h1>ANIXIA管理画面</h1>
+<p>アカウント管理と投稿管理を行います。</p>
+<div id="admin-status" class="admin-message" aria-live="polite">認証状態を確認しています…</div>
+<p><a href="login.html?redirect=admin.html">ログイン</a></p>
 </section>
-
-<section id="season-metadata-sync-panel" class="admin-panel">
-  <h2>放送クール情報の一括補完（AniList）</h2>
-  <p>MyAnimeList IDで作品を照合し、AniListの公式APIが返すseason・seasonYear・startDateを取得します。作品名検索ではなく外部IDで一致させるため、別作品への誤紐付けを避けます。</p>
-  <p class="admin-warning">TV・短編TV・ONAの公開作品のみ対象です。映画・OVAはクール分類に含めません。まずプレビューで照合結果を確認し、その後に同期してください。外部IDがない作品やAniListにクール情報がない作品は変更しません。</p>
-  <div style="display:flex;gap:10px;flex-wrap:wrap">
-    <button id="season-metadata-preview-button" class="admin-button" type="button">照合結果をプレビュー</button>
-    <button id="season-metadata-sync-button" class="admin-button" type="button">確認済みクール情報を同期</button>
-  </div>
-  <p id="season-metadata-message" class="admin-message" aria-live="polite"></p>
-  <pre id="season-metadata-preview" class="admin-message" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
-  <p><a href="https://docs.anilist.co/reference/object/media" target="_blank" rel="noopener noreferrer">AniList APIの作品情報仕様</a> · <a href="https://docs.anilist.co/guide/rate-limiting" target="_blank" rel="noopener noreferrer">API利用制限</a></p>
+<section id="admin-setup" class="admin-panel" hidden>
+<h2>管理者権限がありません</h2>
+<p>管理者権限はサーバー側で付与する必要があります。ブラウザから自分で変更することはできません。</p>
+<code id="user-id"></code>
+<p><a href="https://github.com/The-Rascal-of-Sakurasou/anixia/blob/main/docs/ADMIN_SETUP.md" target="_blank" rel="noopener noreferrer">初回管理者登録の手順</a></p>
 </section>
-
-<section id="wikidata-episode-sync-panel" class="admin-panel">
-  <h2>Wikidataエピソード自動収録</h2>
-  <p>公開済みのWikidata作品を対象に、エピソード名・話数表記・公開日を照合して取得します。取得したエピソードは必ず非公開で登録し、審査後に個別公開します。</p>
-  <p class="admin-warning">Wikidataに登録されたエピソードだけが対象です。未登録・不完全な作品もあります。既存のAnnict等のエピソードがある作品は混在を避けるため自動取込をスキップします。既存レコードや公開状態は上書きしません。</p>
-  <div class="admin-field"><label for="wikidata-episode-limit">1回に確認する作品数</label><select id="wikidata-episode-limit"><option value="3">3作品</option><option value="5">5作品</option><option value="8" selected>8作品</option><option value="10">10作品</option></select></div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><button id="wikidata-episode-preview-button" class="admin-button" type="button">取得候補をプレビュー</button><button id="wikidata-episode-sync-button" class="admin-button" type="button">エピソードを同期</button></div>
-  <p id="wikidata-episode-sync-message" class="admin-message" aria-live="polite"></p>
-  <pre id="wikidata-episode-sync-preview" class="admin-message" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
-  <p><a href="https://www.wikidata.org/wiki/Wikidata:Licensing" target="_blank" rel="noopener noreferrer">Wikidataのライセンス</a> · <a href="https://www.wikidata.org/wiki/Wikidata:SPARQL_query_service/queries/examples" target="_blank" rel="noopener noreferrer">SPARQLクエリ例</a></p>
-</section>
-
-<hr><h3>作品詳細データの同期</h3><p>Annictの作品IDを指定します。エピソード・キャスト・スタッフを各1ページずつ取得し、次ページがある場合はカーソルを更新して続行できます。</p>
-<div class="admin-field"><label for="detail-work-id">Annict作品ID</label><input id="detail-work-id" type="text" inputmode="numeric" placeholder="例: 12345"></div>
-<div class="admin-field"><label for="detail-episode-page">エピソード開始ページ</label><input id="detail-episode-page" type="number" min="0" value="1"></div>
-<div class="admin-field"><label for="detail-cast-page">キャスト開始ページ</label><input id="detail-cast-page" type="number" min="0" value="1"></div>
-<div class="admin-field"><label for="detail-staff-page">スタッフ開始ページ</label><input id="detail-staff-page" type="number" min="0" value="1"></div>
-<div style="display:flex;gap:10px;flex-wrap:wrap"><button id="detail-sync-button" class="admin-button" type="button">詳細データを同期</button><button id="detail-continue-button" class="admin-button" type="button" hidden>続きから同期</button></div>
-<p id="detail-sync-message" class="admin-message" aria-live="polite"></p>
-<section id="admin-poster-sync" class="admin-panel" hidden>
-<div style="border-top:1px solid #30435f;margin-top:0;padding-top:0">
-<h3 style="color:#fff;font-size:15px">作品画像の同期（Wikimedia Commons）</h3>
-<p>公開済み作品の名称をWikimedia Commonsで照合し、CC0・パブリックドメイン・CC BY・CC BY-SAのライセンス情報を確認できた画像だけを登録します。</p>
-<p class="admin-warning">公式ポスターが見つかるとは限りません。画像名・作品名が十分に一致し、画像の縦横比とライセンスを確認できた場合だけ登録します。条件に合わない場合はANIXIAの共通プレースホルダーを表示します。</p>
-<div class="admin-field"><label for="poster-sync-limit">1回の同期上限</label><select id="poster-sync-limit"><option value="10">10作品</option><option value="20" selected>20作品</option><option value="30">30作品</option></select></div>
-<div class="admin-field"><label><input id="poster-sync-force" type="checkbox" style="width:auto;height:auto"> 登録済み画像も再照合する（慎重に使用）</label></div>
-<button id="poster-sync-button" class="admin-button" type="button">利用条件を確認して画像を同期</button>
-<p id="poster-sync-message" class="admin-message" aria-live="polite"></p>
-<p><a href="https://commons.wikimedia.org/wiki/Commons:Licensing" target="_blank" rel="noopener noreferrer">Wikimedia Commonsのライセンス</a> · <a href="https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia" target="_blank" rel="noopener noreferrer">画像の再利用ガイド</a></p>
-<hr style="border:0;border-top:1px solid #30435f;margin:20px 0">
-<h3 style="color:#fff;font-size:15px">全作品のタイトル画像同期（AniList API）</h3>
-<p>AniList公式GraphQL APIで作品名・別名・公開年・形式を照合し、完全一致を確認できた作品だけにカバー画像を登録します。公開・非公開を問わず、画像未設定の全作品を対象にします。</p>
-<p class="admin-warning">曖昧な一致は登録しません。APIに画像がない作品、照合できない作品、通信エラーの作品は未取得として残します。人気度・ランキング・評価などの数値は取得・変更しません。既存画像は上書きしません。</p>
-<button id="anilist-poster-sync-button" class="admin-button" type="button">未設定作品の画像を全件同期</button>
-<p id="anilist-poster-sync-message" class="admin-message" aria-live="polite"></p>
-<p><a href="https://docs.anilist.co/" target="_blank" rel="noopener noreferrer">AniList APIドキュメント</a></p>
+<div id="admin-tools" hidden>
+<section class="admin-panel" id="account-management">
+<h2>アカウント管理</h2>
+<p>登録ユーザーのアカウント情報を確認し、必要な場合に一時的な利用停止・解除を行います。管理者アカウントと自分自身は停止できません。</p>
+<div class="admin-toolbar">
+<input id="user-search" type="search" placeholder="メールアドレス・ユーザー名・表示名で検索" aria-label="ユーザー検索">
+<button id="refresh-users" class="admin-button secondary" type="button">再読み込み</button>
 </div>
+<div id="users-list" class="admin-list"><div class="admin-empty">ユーザーを読み込んでいます…</div></div>
+<div class="admin-toolbar">
+<button id="users-prev" class="admin-button secondary" type="button" disabled>前のページ</button>
+<span id="users-page" class="admin-meta">1ページ目</span>
+<button id="users-next" class="admin-button secondary" type="button" disabled>次のページ</button>
+</div>
+<p id="users-message" class="admin-message" aria-live="polite"></p>
 </section>
-<section id="admin-review-moderation" class="admin-panel" hidden>
-  <h2>レビュー審査</h2>
-  <p>投稿されたレビューを確認し、公開できるものを承認します。</p>
-  <div id="pending-reviews"><p class="admin-message">審査待ちレビューを読み込んでいます…</p></div>
+<section class="admin-panel" id="post-management">
+<h2>投稿管理</h2>
+<p>レビューとコミュニティ投稿を確認します。非表示にした投稿はデータベースから削除せず、必要に応じて再表示できます。</p>
+<div class="admin-toolbar admin-tabs" role="group" aria-label="投稿種別">
+<button class="admin-button secondary" data-post-filter="all" aria-pressed="true" type="button">すべて</button>
+<button class="admin-button secondary" data-post-filter="reviews" aria-pressed="false" type="button">レビュー</button>
+<button class="admin-button secondary" data-post-filter="posts" aria-pressed="false" type="button">コミュニティ投稿</button>
+</div>
+<button id="refresh-posts" class="admin-button secondary" type="button">投稿を再読み込み</button>
+<div id="posts-list" class="admin-list" style="margin-top:14px"><div class="admin-empty">投稿を読み込んでいます…</div></div>
+<p id="posts-message" class="admin-message" aria-live="polite"></p>
 </section>
-<section id="admin-quality-history" class="admin-panel" hidden><h2>カタログ品質監視</h2><p>日次品質スナップショットと、画像未設定作品の一覧を確認します。</p><button id="refresh-quality-history" class="admin-button" type="button">監視履歴を更新</button><div id="quality-history-content"><p class="admin-message">履歴を読み込んでいます…</p></div></section>
-<section id="admin-catalog-review" class="admin-panel" hidden>
-  <h2>作品候補の審査</h2>
-  <p>未公開の作品候補を確認します。公式サイト等の根拠を確認できない作品は公開せず、保留してください。</p>
-  <button id="refresh-catalog-candidates" class="admin-button" type="button">候補を再読み込み</button>
-  <div id="pending-anime"><p class="admin-message">未公開候補を読み込んでいます…</p></div>
-</section>
-
-<section id="admin-episode-review" class="admin-panel" hidden>
-  <h2>エピソード審査</h2>
-  <p>同期されたエピソードは非公開で登録されます。作品名・話数・タイトル・放送日・あらすじを確認し、公開可能な情報だけを個別に承認してください。</p>
-  <button id="refresh-episodes" class="admin-button" type="button">審査待ちを再読み込み</button>
-  <div id="pending-episodes"><p class="admin-message">審査待ちエピソードを読み込んでいます…</p></div>
-</section>
-<section id="admin-metadata-editor" class="admin-panel" hidden>
-  <h2>作品メタデータ編集</h2>
-  <p>作品のジャンル・タグと、前編・続編・スピンオフなどの関連作品を管理します。ここでの変更は管理者権限で保存されます。</p>
-  <div class="admin-field"><label for="metadata-anime">編集する作品</label><select id="metadata-anime"><option value="">作品を選択してください</option></select></div>
-  <div class="admin-warning">ジャンルは作品の大分類、タグは具体的な属性・テーマとして使い分けてください。根拠が不十分な情報は追加しないでください。</div>
-  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
-    <div class="admin-field"><label for="metadata-genres">ジャンル（複数選択可）</label><select id="metadata-genres" multiple size="9" style="height:auto;min-height:190px;padding:8px"></select></div>
-    <div class="admin-field"><label for="metadata-tags">タグ（複数選択可）</label><select id="metadata-tags" multiple size="9" style="height:auto;min-height:190px;padding:8px"></select></div>
-  </div>
-  <button id="save-taxonomy" class="admin-button" type="button">ジャンル・タグを保存</button>
-  <p id="taxonomy-message" class="admin-message" aria-live="polite"></p>
-  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
-    <div class="admin-field"><label for="new-genre">新しいジャンルを追加</label><input id="new-genre" maxlength="80" placeholder="例：SF"><button id="create-genre" class="admin-button" type="button">ジャンルを追加</button></div>
-    <div class="admin-field"><label for="new-tag">新しいタグを追加</label><input id="new-tag" maxlength="80" placeholder="例：タイムループ"><button id="create-tag" class="admin-button" type="button">タグを追加</button></div>
-  </div>
-  <h3 style="color:#fff;font-size:15px;margin-top:25px">関連作品を登録</h3>
-  <div class="admin-field"><label for="related-anime">関連する作品</label><select id="related-anime"><option value="">作品を選択してください</option></select></div>
-  <div class="admin-field"><label for="relation-type">関係</label><select id="relation-type">
-    <option value="sequel">続編</option><option value="prequel">前編</option><option value="side_story">外伝</option><option value="spin_off">スピンオフ</option><option value="alternative_version">別バージョン・リメイク</option><option value="summary">総集編</option><option value="parent_story">本編・親作品</option><option value="adaptation">メディア化・原作関係</option><option value="other">その他</option>
-  </select></div>
-  <button id="add-relation" class="admin-button" type="button">関連作品を登録</button>
-  <p id="relation-message" class="admin-message" aria-live="polite"></p>
-  <div id="anime-relations-list"><p class="admin-message">作品を選択してください。</p></div>
-  <h3 style="color:#fff;font-size:15px;margin-top:25px">データ品質管理</h3>
-  <p>公開・未公開を含む作品とエピソードを検査します。検出結果は確認候補であり、自動で作品の公開状態やデータを書き換えることはありません。</p>
-  <button id="refresh-catalog-quality" class="admin-button" type="button">品質を再検査</button>
-  <div id="catalog-quality-check"><p class="admin-message">候補を読み込んでいます…</p></div>
-  <h3 style="color:#fff;font-size:15px;margin-top:30px">作品の重複候補</h3>
-  <p>作品名・別名を正規化し、公開年と作品形式も一致する作品を候補として表示します。候補の検出だけを行い、自動統合・削除・公開状態の変更はしません。</p>
-  <button id="refresh-anime-duplicates" class="admin-button" type="button">作品の重複候補を再検査</button>
-  <div id="anime-duplicate-candidates"><p class="admin-message">作品の重複候補を確認しています…</p></div>
-  <h3 style="color:#fff;font-size:15px;margin-top:30px">重複候補・名称統合</h3>
-  <p>日本語・かな・英語・別名を正規化して一致候補を表示します。候補は同一性の証明ではありません。作品との関連情報を確認し、同一レコードと判断できる場合だけ統合してください。作品本体の統合は対象外です。</p>
-  <button id="refresh-entity-duplicates" class="admin-button" type="button">重複候補を再検査</button>
-  <div id="entity-duplicate-candidates"><p class="admin-message">重複候補を読み込んでいます…</p></div>
-</section>
-
-
-</section>
-
-<section id="admin-name-audit" class="admin-panel" hidden>
-  <h2>人物・キャラクター等の名称総合検査</h2>
-  <p>人物・声優・スタッフ、キャラクター、制作会社、制作組織の名称と読み仮名を全件検査します。ひらがな表記、英字表記、日本語名・読み仮名の欠落などを確認候補として抽出します。</p>
-  <p class="admin-warning">ひらがな表記が正式名称の人物・キャラクター・制作会社も存在します。自動で漢字へ変換したり、レコードを削除したりしません。公式プロフィール・公式クレジット等の根拠を確認してから修正してください。</p>
-  <button id="name-audit-run" class="admin-button" type="button">全件を再検査</button>
-  <p id="name-audit-status" class="admin-message" aria-live="polite">名称検査を準備しています…</p>
-  <div id="name-audit-results"></div>
-</section>
-
+</div>
 </main>
-<script src="anixia-name-audit.js?v=20261119-r1" defer></script>
-<script src="anixia-i18n.js?v=20261119-r8" defer></script>
 </body>
 </html>
