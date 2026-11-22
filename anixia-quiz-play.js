@@ -32,7 +32,10 @@
       submitted=true;
       $("quiz-form").hidden=true;
       $("quiz-result").hidden=false;
-      $("quiz-result").innerHTML=`<h2>クイズ結果</h2><div class="result-score">${Number(result.score)||0} / ${Number(result.max_score)||0} 点</div><p>回答を保存しました。</p>${quiz.questions.map((q,i)=>q.explanation?`<div class="explanation"><b>Q${i+1} 解説</b>${esc(q.explanation)}</div>`:"").join("")}<p><a href="quiz.html">クイズ一覧へ戻る</a></p>`;
+      const score=Number(result.score)||0,maxScore=Number(result.max_score)||0;
+      const shareText=`ANIXIAの「${quiz.title}」クイズに挑戦しました！結果は${score}/${maxScore}点。 #ANIXIA #アニメクイズ`;
+      const shareUrl="https://twitter.com/intent/tweet?text="+encodeURIComponent(shareText)+"&url="+encodeURIComponent(location.href);
+      $("quiz-result").innerHTML=`<h2>クイズ結果</h2><div class="result-score">${score} / ${maxScore} 点</div><p>回答を保存しました。</p><a class="quiz-share" href="${esc(shareUrl)}" target="_blank" rel="noopener noreferrer">結果をXでシェアする</a>${quiz.questions.map((q,i)=>q.explanation?`<div class="explanation"><b>Q${i+1} 解説</b>${esc(q.explanation)}</div>`:"").join("")}<p><a href="quiz.html">クイズ一覧へ戻る</a></p>`;
     }catch(error){console.error(error);$("quiz-message").textContent="採点に失敗しました。クイズの設定を確認して、もう一度お試しください。";$("submit-quiz").disabled=false;}
   });
   init();
