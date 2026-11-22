@@ -26,6 +26,13 @@
       designSystem.dataset.anixiaScreenSystem = "true";
       document.head.appendChild(designSystem);
     }
+    if (!document.querySelector('link[data-anixia-theme-styles="true"]')) {
+      const themeStyle = document.createElement("link");
+      themeStyle.rel = "stylesheet";
+      themeStyle.href = ROOT + "anixia-theme.css?v=20261122-1";
+      themeStyle.dataset.anixiaThemeStyles = "true";
+      document.head.appendChild(themeStyle);
+    }
     if (document.getElementById("anixia-global-header-style")) return;
     const style = document.createElement("style");
     style.id = "anixia-global-header-style";
@@ -134,6 +141,7 @@
         <div class="anixia-header-actions">
           <a class="anixia-header-button" id="account-link" href="${ROOT}login.html">ログイン</a>
           <button class="anixia-header-button" id="home-logout" type="button" hidden>ログアウト</button>
+          <button class="anixia-header-button" id="anixia-theme-toggle" type="button" aria-label="ダークモードに切り替え" title="テーマを切り替え">☾</button>
           <button class="anixia-header-button anixia-menu-toggle" id="anixia-menu-toggle" type="button" aria-expanded="false" aria-controls="anixia-global-nav" aria-label="メニューを開く"><span aria-hidden="true">☰</span><span class="anixia-menu-label">メニュー</span></button>
           <button class="anixia-header-button" id="language-toggle" type="button">EN</button>
         </div>
@@ -152,6 +160,7 @@
       const path = a.getAttribute("href").replace(ROOT, "");
       if (path === current || (!path && !current)) a.setAttribute("aria-current", "page");
     });
+    installTheme(header);
     const language = header.querySelector("#language-toggle");
     language.textContent = (localStorage.getItem("anixia-language") || "ja") === "ja" ? "EN" : "日本語";
     language.addEventListener("click", () => {
@@ -201,6 +210,27 @@
     window.addEventListener("orientationchange", updateHeaderSpace, {passive:true});
     window.addEventListener("pageshow", updateHeaderSpace);
     setupAuth(header);
+  }
+
+  function installTheme(header) {
+    const button = header.querySelector("#anixia-theme-toggle");
+    let theme = "light";
+    try { theme = localStorage.getItem("anixia-theme") === "dark" ? "dark" : "light"; } catch (_) {}
+    const apply = next => {
+      theme = next === "dark" ? "dark" : "light";
+      document.documentElement.dataset.anixiaTheme = theme;
+      try { localStorage.setItem("anixia-theme", theme); } catch (_) {}
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", theme === "dark" ? "#0b1220" : "#ffffff");
+      if (button) {
+        button.textContent = theme === "dark" ? "☀" : "☾";
+        button.setAttribute("aria-label", theme === "dark" ? "ライトモードに切り替え" : "ダークモードに切り替え");
+        button.setAttribute("aria-pressed", String(theme === "dark"));
+        button.title = theme === "dark" ? "ライトモード" : "ダークモード";
+      }
+    };
+    apply(theme);
+    button?.addEventListener("click", () => apply(theme === "dark" ? "light" : "dark"));
   }
 
   function loadScript(src, marker) {
