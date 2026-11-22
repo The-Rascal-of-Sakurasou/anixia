@@ -5,6 +5,23 @@
   var KEY="sb_publishable_UiVRBLbMIAy-1GZqVY35Zw_uEp-W_GJ";
   var state={client:null,user:null,ready:false,promise:null};
 
+  function fetchWithTimeout(input,init){
+    init=init||{};
+    if(!w.AbortController)return w.fetch(input,init);
+    var controller=new w.AbortController();
+    var sourceSignal=init.signal;
+    var relayAbort=function(){controller.abort();};
+    if(sourceSignal){
+      if(sourceSignal.aborted)controller.abort();
+      else sourceSignal.addEventListener("abort",relayAbort,{once:true});
+    }
+    var timer=w.setTimeout(function(){controller.abort();},30000);
+    return w.fetch(input,Object.assign({},init,{signal:controller.signal})).finally(function(){
+      w.clearTimeout(timer);
+      if(sourceSignal)sourceSignal.removeEventListener("abort",relayAbort);
+    });
+  }
+
   function waitForSDK(){
     if(w.supabase&&typeof w.supabase.createClient==="function") return Promise.resolve();
     return new Promise(function(resolve,reject){
@@ -20,6 +37,7 @@
   function client(){
     if(!state.client){
       state.client=w.__anixiaAuthClient||(w.__anixiaAuthClient=w.supabase.createClient(URL,KEY,{
+        global:{fetch:fetchWithTimeout},
         auth:{
           persistSession:true,
           autoRefreshToken:true,
