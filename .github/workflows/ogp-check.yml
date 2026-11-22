@@ -38,10 +38,10 @@ jobs:
           const imageUrl = new URL('assets/anixia-og.png', base).href;
           const failures = [];
           const getMeta = (html, key, attr = 'property') => {
-            for (const tag of html.match(/<meta\\b[^>]*>/gi) || []) {
-              const attrValue = tag.match(new RegExp('\\\\b' + attr + '="([^"]*)"', 'i'))?.[1];
-              const contentValue = tag.match(/\\bcontent="([^"]*)"/i)?.[1];
-              if (attrValue === key) return contentValue ?? null;
+            for (const tag of html.match(/<meta[^>]*>/gi) || []) {
+              if (tag.includes(attr + '="' + key + '"')) {
+                return tag.match(/content="([^"]*)"/i)?.[1] ?? null;
+              }
             }
             return null;
           };
