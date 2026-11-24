@@ -135,3 +135,11 @@
 - `loadPublishedAnime` を1,000件単位のページングに変更。タイトル順に加えて作品IDをタイブレークに使用し、最大20,000件まで読み込む。
 - Supabase Edge Function version 3としてデプロイ済み。GitHubの `supabase/functions/sync-syoboi-titles/index.ts` も同時更新。
 - 変更後の同期結果はまだ確定していない。次回の正常実行で `publishedAnime`、`exactMatches`、`kanaFilled`、`aliasesInserted` を確認する。
+
+
+### 最新DBスナップショット（2026-11-24 11:33:55 UTC）
+- 全作品4,095件（公開3,988件／非公開107件）
+- ポスターURLあり2,141件
+- 公開作品の読み仮名975件、話数設定2,754件、公式URL745件、あらすじ0件
+- 個別エピソード2件
+- 作品候補の自動収集が継続中のため、件数は変動する。
