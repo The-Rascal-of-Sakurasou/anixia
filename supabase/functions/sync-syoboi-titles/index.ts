@@ -94,13 +94,22 @@ function hasJapaneseReading(value: string): boolean {
   return /[\u3040-\u30ff]/u.test(value) && value.length <= 200;
 }
 async function loadPublishedAnime(db: any): Promise<Row[]> {
-  const result = await db.from("anime")
-    .select("id,title,title_ja,title_kana,syobocal_tid")
-    .eq("is_published", true)
-    .order("title_ja", { ascending: true })
-    .range(0, 1999);
-  if (result.error) throw result.error;
-  return result.data || [];
+  const all: Row[] = [];
+  const pageSize = 1000;
+  const maximumRows = 20000;
+  for (let offset = 0; offset < maximumRows; offset += pageSize) {
+    const result = await db.from("anime")
+      .select("id,title,title_ja,title_kana,syobocal_tid")
+      .eq("is_published", true)
+      .order("title_ja", { ascending: true })
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (result.error) throw result.error;
+    const page = result.data || [];
+    all.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return all;
 }
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("Origin");
