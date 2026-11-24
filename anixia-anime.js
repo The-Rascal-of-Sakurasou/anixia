@@ -4,6 +4,7 @@
   const PAGE_SIZE = 25;
   let page = 0;
   let lastCount = 0;
+  let requestId = 0;
   const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const en=()=>localStorage.getItem("anixia-language")==="en";
   const hasJapanese = value => /[\u3040-\u30ff\u3400-\u9fff]/u.test(String(value||""));
@@ -21,19 +22,11 @@
 
   async function populateFilters() {
     const params = new URLSearchParams(location.search);
-    $("query").value = params.get("search") || "";
-    $("genre").value = params.get("genre") || "";
-    $("year").value = params.get("year") || "";
-    $("season").value = params.get("season") || "";
-    $("format").value = params.get("format") || "";
-    $("studio").value = params.get("studio") || "";
-    $("person").value = params.get("person") || "";
-    $("character").value = params.get("character") || "";
-    $("sort").value = params.get("sort") || "newest";
-
     const years = $("year");
     const currentYear = new Date().getFullYear();
-    for (let y = currentYear; y >= 1960; y--) years.add(new Option(String(y), String(y)));
+    for (let y = currentYear + 1; y >= 1963; y--) {
+      years.add(new Option(String(y), String(y)));
+    }
 
     try {
       const genres = await ANIXIA.getGenres();
@@ -54,9 +47,21 @@
       ]);
       Array.from($("tag").options).forEach(option => { option.selected = selected.has(option.value); });
     } catch (e) { console.warn("tag options unavailable", e); }
+
+    // Restore URL filters only after asynchronous select options have been added.
+    $("query").value = params.get("search") || "";
+    $("genre").value = params.get("genre") || "";
+    $("year").value = params.get("year") || "";
+    $("season").value = params.get("season") || "";
+    $("format").value = params.get("format") || "";
+    $("studio").value = params.get("studio") || "";
+    $("person").value = params.get("person") || "";
+    $("character").value = params.get("character") || "";
+    $("sort").value = params.get("sort") || "newest";
   }
 
   async function search() {
+    const currentRequest = ++requestId;
     const query = $("query").value.trim();
     const options = {
       query,
@@ -76,6 +81,7 @@
     $("result-summary").textContent = "検索中…";
     try {
       const result = await ANIXIA.listAnime(options);
+      if (currentRequest !== requestId) return;
       lastCount = result.count || 0;
       $("results").innerHTML = result.data.length
         ? result.data.map(renderCard).join("")
@@ -99,7 +105,9 @@
       history.replaceState(null, "", location.pathname + (params.size ? "?" + params.toString() : ""));
     } catch (error) {
       console.error(error);
-      $("results").innerHTML = '<p class="anixia-state">検索に失敗しました。通信状態を確認して、もう一度お試しください。</p>';
+      if (currentRequest !== requestId) return;
+      $("results").innerHTML = '<div class="anixia-state">検索に失敗しました。通信状態を確認して、もう一度お試しください。<p><button type="button" id="search-retry">再試行</button></p></div>';
+      $("search-retry")?.addEventListener("click", search, { once: true });
       $("result-count").textContent = "";
       $("result-summary").textContent = "データベースに接続できませんでした。";
       $("prev").disabled = true;
