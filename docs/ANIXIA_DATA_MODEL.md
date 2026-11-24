@@ -28,6 +28,23 @@ Updated: 2026-11-17
 - `anime_relations` records directed work-to-work relations such as prequel, sequel, side story, spin-off, alternate version, summary, and adaptation.
 - `*_external_ids` tables preserve source cross-references without replacing ANIXIA IDs.
 - `catalog_sources` records data-source identity and rights review state.
+- `anime_broadcast_schedules` stores broadcaster, weekday, start time, timezone, and broadcast date ranges.
+- `anime_streaming_services` stores platform availability by region, access model, and availability dates.
+- `anime_theme_songs` stores opening, ending, and insert-song metadata without storing copyrighted audio or lyrics.
+- `anime_source_materials` stores original-work medium, title, authors, publisher, and primary-source relationships.
+
+## Extended work metadata
+
+The catalogue also supports the detailed information sections commonly found on seasonal-anime reference sites:
+
+| Table | Purpose | Important rules |
+|---|---|---|
+| `anime_broadcast_schedules` | Broadcast channel, weekday, start time, timezone, and date range | Store only sourced schedules; weekday uses PostgreSQL convention (Sunday=0 through Saturday=6). |
+| `anime_streaming_services` | Streaming platform and availability | Region is ISO 3166-1 alpha-2; distinguish subscription, free, rental, purchase, and limited-free access. Availability is time- and region-specific. |
+| `anime_theme_songs` | OP, ED, and insert-song credits | Store factual track/artist/credit metadata only; do not store lyrics or audio. |
+| `anime_source_materials` | Manga, light novel, novel, game, visual novel, web novel, or original-work details | A work may have multiple source materials; mark the primary material explicitly rather than inferring it. |
+
+All four tables are linked to `anime` by UUID, have source/provenance fields, use source-record IDs for idempotent imports, and have indexes for work lookups. Public reads are restricted to published works; writes are limited to ANIXIA administrators through RLS. These tables are initially schema-only: no schedule, platform, theme-song, or source-material facts are fabricated or bulk-filled without verified source data.
 
 ## Annict API field mapping
 
