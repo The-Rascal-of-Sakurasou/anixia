@@ -76,16 +76,16 @@
     }
   }
   async function init() {
-    await loadCatalogCount();
-    await Promise.all([
+    // Independent homepage sections load concurrently so a slow count query
+    // cannot delay the latest additions or genre navigation.
+    const [userResult] = await Promise.all([
+      ANIXIA.getUser().catch(() => null),
+      loadCatalogCount(),
       loadSection("popular-works", { sort: "newest", limit: 5 }),
+      loadGenres()
     ]);
-    await loadGenres();
-    try {
-      const user = await ANIXIA.getUser();
-      $("account-link").textContent = user ? t().mypage : t().login;
-      $("account-link").href = user ? "mypage.html" : "login.html";
-    } catch (_) {}
+    $("account-link").textContent = userResult ? t().mypage : t().login;
+    $("account-link").href = userResult ? "mypage.html" : "login.html";
   }
   $("hero-search").addEventListener("submit", (event) => {
     event.preventDefault();
