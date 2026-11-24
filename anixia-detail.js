@@ -47,7 +47,15 @@
     $("meta").innerHTML=[fmt(a.format),a.release_year,season,a.episode_count?String(a.episode_count)+(isEnglish()?" episodes":"話"):""].filter(Boolean).map(x=>'<span>'+esc(x)+'</span>').join("");
     $("genres").innerHTML=tagList(a.genres||[],"ジャンル");
     $("tags").innerHTML=tagList(a.tags||[],"タグ");
-    $("series").innerHTML=tagList(a.series||[],"シリーズ");
+    const seriesItems=a.series||[];
+    $("series").innerHTML=seriesItems.length?seriesItems.map(item=>{
+      const seriesName=isEnglish()
+        ?(item.name_en||(!hasJapanese(item.name)?item.name:"Name unavailable"))
+        :(item.name||"シリーズ名未登録");
+      const roleNames={franchise:label("シリーズ・作品群","Franchise"),adaptation:label("メディア展開","Adaptation"),shared_universe:label("共通世界観","Shared Universe"),other:label("その他","Other")};
+      const role=item.series_role?roleNames[item.series_role]||item.series_role:"";
+      return '<span>'+esc(seriesName)+(role?' · '+esc(role):"")+'</span>';
+    }).join(""):'<span class="anixia-empty">'+(isEnglish()?"No series information has been added yet.":"シリーズ情報はまだ登録されていません。")+'</span>';
     $("organizations").innerHTML=tagList(a.organizations||[],"制作団体");
     const relationLabels=isEnglish()?{sequel:"Sequel",prequel:"Prequel",side_story:"Side Story",spin_off:"Spin-off",alternative_version:"Alternate Version / Remake",summary:"Compilation",parent_story:"Parent Story",adaptation:"Adaptation",other:"Other"}:{sequel:"続編",prequel:"前編",side_story:"外伝",spin_off:"スピンオフ",alternative_version:"別バージョン・リメイク",summary:"総集編",parent_story:"本編・親作品",adaptation:"メディア化・原作関係",other:"その他"};
     const related=a.related_works||[];
@@ -104,7 +112,20 @@
       const link=person.id?'<a href="entity-detail.html?type=person&id='+encodeURIComponent(person.id)+'">'+esc(personName)+'</a>':esc(personName);
       return '<span>'+link+(person.role?' · '+esc(roleLabel(person.role)):"")+'</span>';
     }).join(""):'<span class="anixia-empty">'+(isEnglish()?"No staff information has been added yet.":"スタッフはまだ登録されていません。")+'</span>';
-    $("reviews").innerHTML=a.reviews.length?a.reviews.map(r=>'<article class="anixia-review"><b>'+esc(r.title||"レビュー")+(r.spoiler?" · ネタバレあり":"")+'</b><p>'+esc(r.body)+'</p></article>').join(""):'<div class="anixia-empty">公開レビューはまだありません。</div>';
+    $("reviews").innerHTML=a.reviews.length?a.reviews.map((r,index)=>{
+      const reviewId="review-spoiler-"+index;
+      const heading=esc(r.title||(isEnglish()?"Review":"レビュー"));
+      const body='<p>'+esc(r.body)+'</p>';
+      if(!r.spoiler)return '<article class="anixia-review"><b>'+heading+'</b>'+body+'</article>';
+      return '<article class="anixia-review anixia-review-spoiler"><b>'+heading+' · '+label("ネタバレあり","Spoiler")+'</b><div class="anixia-review-hidden" id="'+reviewId+'" hidden>'+body+'</div><button class="anixia-review-reveal secondary" type="button" aria-expanded="false" aria-controls="'+reviewId+'">'+label("ネタバレを表示","Reveal spoiler")+'</button></article>';
+    }).join(""):'<div class="anixia-empty">'+(isEnglish()?"No public reviews yet.":"公開レビューはまだありません。")+'</div>';
+    $("reviews").querySelectorAll(".anixia-review-reveal").forEach(button=>button.addEventListener("click",()=>{
+      const content=$(button.getAttribute("aria-controls"));
+      const expanded=button.getAttribute("aria-expanded")==="true";
+      content.hidden=expanded;
+      button.setAttribute("aria-expanded",String(!expanded));
+      button.textContent=expanded?label("ネタバレを表示","Reveal spoiler"):label("ネタバレを隠す","Hide spoiler");
+    }));
     $("detail-loading").hidden=true;$("detail-content").hidden=false;
   }
 
