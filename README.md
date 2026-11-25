@@ -25,6 +25,20 @@
 - キャッチコピーを設けず、検索・作品情報・ランキングなどの機能を中心に構成
 - PC・タブレット・スマートフォンに対応
 
+## 参考サイト・参考プロジェクト
+
+ANIXIAの設計では、以下を参考にします。参考サイトはUI・情報設計・機能設計のベンチマークであり、作品データを取得するAPIとは区別します。
+
+| サイト | 参考にする領域 |
+|---|---|
+| [日本のアニメ大全](https://animedb.jp/) | 国内作品の網羅性・歴史的作品の収録 |
+| [MyAnimeList](https://myanimelist.net/) | 大規模作品DB・作品詳細・ユーザー評価やリスト機能 |
+| [きせつあにめ](https://kisetsu-anime.com/) | 作品情報・放送期別の整理 |
+| [Animecia](https://media-mania.github.io/Animecia/index.html) | 日本語中心のアニメDB、作品情報・検索・発見体験 |
+| [Anime Quiz World（AQW）](https://the-rascal-of-sakurasou.github.io/anime-quiz-world/index.html) | アニメクイズ・おすすめ診断・作品検索・ユーザー参加型機能 |
+
+参考サイトの情報やデザインをそのまま複製せず、ANIXIA独自の情報設計と権利方針に沿って取り入れます。Wikidata等のデータ取得元は [データソース方針](docs/DATA_SOURCES.md) で別途管理します。
+
 ## 主な機能領域
 
 - **アニメデータベース**：日本語タイトル、別名、英語名、ローマ字、あらすじ、形式、放送時期、話数、画像、ジャンル、制作会社、人物・キャラクター情報
