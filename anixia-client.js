@@ -81,6 +81,20 @@
     return items.map(work => ({ ...work, poster_credit: credits.get(work.id) || work.poster_credit || null }));
   }
 
+  async function enrichAnimeRows(rows) {
+    const items = Array.isArray(rows) ? rows : [];
+    if (!items.length) return items;
+    const [titled, credited] = await Promise.all([
+      attachEnglishTitles(items),
+      attachPosterCredits(items)
+    ]);
+    const creditsById = new Map(credited.map(row => [row.id, row.poster_credit || null]));
+    return titled.map(row => ({
+      ...row,
+      poster_credit: creditsById.get(row.id) || row.poster_credit || null
+    }));
+  }
+
   async function listAnime(options = {}) {
     const db = getClient();
     const limit = Math.min(Math.max(Number(options.limit) || 24, 1), 50);
@@ -100,8 +114,7 @@
       p_character_query: safeTerm(options.characterQuery) || null
     });
     if (result.error) throw result.error;
-    const titled = await attachEnglishTitles(result.data || []);
-    const data = await attachPosterCredits(titled);
+    const data = await enrichAnimeRows(result.data || []);
     return { data, count: Number(data[0]?.total_count || 0) };
   }
 
@@ -121,11 +134,11 @@
     const result = await getClient().rpc("get_public_anime_detail", { p_anime_id: id });
     if (result.error) throw result.error;
     if (!result.data) return null;
-    const relatedTitles = await attachEnglishTitles(result.data.related_works || []);
-    const related = await attachPosterCredits(relatedTitles);
-    const [titledWork] = await attachEnglishTitles([{ ...result.data, related_works: related }]);
-    const [work] = await attachPosterCredits([titledWork]);
-    return work;
+    const [related, enrichedMain] = await Promise.all([
+      enrichAnimeRows(result.data.related_works || []),
+      enrichAnimeRows([result.data])
+    ]);
+    return { ...enrichedMain[0], related_works: related };
   }
 
   async function getGenres() {
@@ -146,12 +159,18 @@
     return result.data || [];
   }
 
-  async function getCatalogCount() {
-    const result = await getClient().rpc("search_public_anime", {
-      p_sort: "newest", p_limit: 1, p_offset: 0
+  async function getLatestAnime(limit = 5) {
+    const result = await getClient().rpc("get_latest_public_anime", {
+      p_limit: Math.min(Math.max(Number(limit) || 5, 1), 20)
     });
     if (result.error) throw result.error;
-    return Number(result.data?.[0]?.total_count || 0);
+    return enrichAnimeRows(result.data || []);
+  }
+
+  async function getCatalogCount() {
+    const result = await getClient().rpc("get_public_anime_count");
+    if (result.error) throw result.error;
+    return Number(result.data || 0);
   }
 
   async function getPublicAnimeByIds(ids) {
@@ -159,8 +178,7 @@
     if (!uniqueIds.length) return [];
     const result = await getClient().rpc("get_public_anime_by_ids", { p_anime_ids: uniqueIds });
     if (result.error) throw result.error;
-    const titled = await attachEnglishTitles(result.data || []);
-    return attachPosterCredits(titled);
+    return enrichAnimeRows(result.data || []);
   }
 
   async function getUser() {
@@ -522,8 +540,7 @@
       p_limit: 30
     });
     if (result.error) throw result.error;
-    const titled = await attachEnglishTitles(result.data || []);
-    return attachPosterCredits(titled);
+    return enrichAnimeRows(result.data || []);
   }
   
 
@@ -583,7 +600,7 @@
 
   w.ANIXIA = Object.freeze({
     URL, getClient, listAnime, suggestCatalog, getAnime, getGenres, getStudios, getTags, posterMarkup, syncCommonsPosters, syncAniListPosters,
-    getCatalogCount, getPublicAnimeByIds, getUser, getUserAnimeState, toggleFavorite,
+    getCatalogCount, getLatestAnime, getPublicAnimeByIds, getUser, getUserAnimeState, toggleFavorite,
     saveWatchEntry, saveRating, getMyDashboard, createReview,
     listPendingReviews, moderateReview, updateProfile, listQuizzes, getQuiz, submitQuiz, isAdmin, syncAnnictCatalog, syncAnnictWorkDetails,
     listPendingAnime, getAdminCatalogQualityReport, getAdminEntityDuplicateCandidates, getAdminAnimeDuplicateCandidates, mergeAdminCatalogEntity, setAnimePublished, listPendingEpisodes, setEpisodePublished,
