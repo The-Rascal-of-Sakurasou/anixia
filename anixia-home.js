@@ -29,10 +29,10 @@
   };
   async function loadSection(id, options) {
     try {
-      const result = await ANIXIA.listAnime(options);
+      const data = await ANIXIA.getLatestAnime(options.limit || 5);
       const el = $(id);
       if (!el) return;
-      el.innerHTML = result.data.length ? result.data.map(card).join("") : `<p class="anixia-state">${esc(t().empty)}</p>`;
+      el.innerHTML = data.length ? data.map(card).join("") : `<p class="anixia-state">${esc(t().empty)}</p>`;
     } catch (error) {
       console.error(error);
       showRetryState(id, t().failed, () => loadSection(id, options));
