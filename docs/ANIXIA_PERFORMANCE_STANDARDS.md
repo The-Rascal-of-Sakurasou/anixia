@@ -66,6 +66,20 @@ Measurements taken directly against the Supabase database on 2026-11-25; these a
 
 The underlying latest-row SELECT used `anime_published_created_at_idx` and read 7 shared buffers in the observed plan. These measurements are a baseline, not a guarantee under all traffic or cache conditions.
 
+
+### Search query restructuring
+
+The general search RPC originally evaluated person, character, studio, and organization matches as correlated EXISTS conditions for each anime row. These have been moved into private candidate-ID helper functions and are now evaluated as entity searches that return matching anime IDs.
+
+This preserves substring matching and the same global/person/character search fields while reducing repeated correlated work. Helper functions have no direct execution grant for anon/authenticated; they are called from the existing privileged search RPC.
+
+Measured database timings on 2026-11-25:
+- Global query `Re:ゼロ`: about 1,713 ms before restructuring, about 1,199 ms after.
+- Person filter `花澤香菜`: about 247 ms before, about 131 ms after.
+- Character filter `キリト`: about 170 ms after restructuring (no earlier baseline was recorded).
+
+Global search remains slower than the desired target and is a follow-up optimization item. A trigram-index rewrite was tested and reverted because its measured execution time regressed substantially; no trigram extension or experimental indexes remain.
+
 ## Next optimization priorities
 
 1. Review the general search RPC. Its current implementation computes rating aggregates and a total-count window while evaluating broad substring matches. Measure query plans for title, person, character, genre, and studio searches separately.
