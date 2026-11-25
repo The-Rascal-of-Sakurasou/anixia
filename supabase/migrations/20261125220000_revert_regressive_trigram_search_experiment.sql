@@ -210,7 +210,7 @@ AS $function$
   limit least(greatest(coalesce(p_limit, 24), 1), 50)
   offset least(greatest(coalesce(p_offset, 0), 0), 10000);
 $function$
-
+;
 
 drop index if exists public.anime_search_trgm_idx;
 drop index if exists public.anime_titles_search_trgm_idx;
