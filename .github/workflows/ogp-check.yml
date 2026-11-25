@@ -69,11 +69,20 @@ jobs:
             if (getMeta(html, 'twitter:card', 'name') !== 'summary_large_image') failures.push(file + ': twitter card is not summary_large_image');
           }
 
-          const response = await fetch(imageUrl, { redirect: 'follow' });
-          if (!response.ok) failures.push('OGP image HTTP status: ' + response.status);
-          const contentType = response.headers.get('content-type') || '';
+          let response;
+          for (let attempt = 0; attempt < 4; attempt++) {
+            try {
+              response = await fetch(imageUrl, { redirect: 'follow', signal: AbortSignal.timeout(15000) });
+              if (response.ok || (response.status < 500 && response.status !== 429)) break;
+            } catch (error) {
+              if (attempt === 3) throw error;
+            }
+            if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 1500 * (attempt + 1)));
+          }
+          if (!response?.ok) failures.push('OGP image HTTP status: ' + (response?.status ?? 'no response'));
+          const contentType = response?.headers.get('content-type') || '';
           if (!contentType.toLowerCase().includes('image/png')) failures.push('OGP image content-type is not image/png: ' + contentType);
-          const bytes = new Uint8Array(await response.arrayBuffer());
+          const bytes = response?.ok ? new Uint8Array(await response.arrayBuffer()) : new Uint8Array();
           const signature = [137,80,78,71,13,10,26,10];
           if (signature.some((v, i) => bytes[i] !== v)) {
             failures.push('OGP image does not have a valid PNG signature');
