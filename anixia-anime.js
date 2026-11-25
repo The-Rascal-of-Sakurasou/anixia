@@ -33,10 +33,10 @@
     const currentYear = new Date().getFullYear();
     const firstYear = 1900;
     const lastYear = currentYear + 5;
-    for (let decadeEnd = Math.floor(lastYear / 10) * 10; decadeEnd >= firstYear; decadeEnd -= 10) {
-      const decadeStart = Math.max(firstYear, decadeEnd - 9);
+    for (let decadeStart = Math.floor(lastYear / 10) * 10; decadeStart >= firstYear; decadeStart -= 10) {
+      const decadeEnd = decadeStart + 9;
       const group = document.createElement("optgroup");
-      group.label = decadeStart + "–" + decadeEnd + "年代";
+      group.label = decadeStart + "年代";
       for (let y = Math.min(lastYear, decadeEnd); y >= decadeStart; y--) {
         group.appendChild(new Option(String(y), String(y)));
       }
