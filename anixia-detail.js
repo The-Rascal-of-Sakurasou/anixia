@@ -104,7 +104,24 @@
       const link=person.id?'<a href="entity-detail.html?type=person&id='+encodeURIComponent(person.id)+'">'+esc(personName)+'</a>':esc(personName);
       return '<span>'+link+(person.role?' · '+esc(roleLabel(person.role)):"")+'</span>';
     }).join(""):'<span class="anixia-empty">'+(isEnglish()?"No staff information has been added yet.":"スタッフはまだ登録されていません。")+'</span>';
-    $("reviews").innerHTML=a.reviews.length?a.reviews.map(r=>'<article class="anixia-review"><b>'+esc(r.title||"レビュー")+(r.spoiler?" · ネタバレあり":"")+'</b><p>'+esc(r.body)+'</p></article>').join(""):'<div class="anixia-empty">公開レビューはまだありません。</div>';
+    const reviews=Array.isArray(a.reviews)?a.reviews:[];
+    $("reviews").innerHTML=reviews.length?reviews.map((r,index)=>{
+      const title=esc(r.title||(isEnglish()?"Review":"レビュー"));
+      const bodyId="review-body-"+(r.id?String(r.id).replace(/[^a-zA-Z0-9_-]/g,""):index);
+      const body='<p id="'+bodyId+'"'+(r.spoiler?' hidden':'')+'>'+esc(r.body)+'</p>';
+      const spoilerButton=r.spoiler?'<button class="anixia-spoiler-toggle" type="button" data-review-spoiler aria-expanded="false" aria-controls="'+bodyId+'">'+(isEnglish()?"Show spoiler":"ネタバレを表示")+'</button>':'';
+      return '<article class="anixia-review"><b>'+title+(r.spoiler?' · '+(isEnglish()?"Spoiler":"ネタバレあり"):"")+'</b>'+spoilerButton+body+'</article>';
+    }).join(""):'<div class="anixia-empty">'+(isEnglish()?"No public reviews yet.":"公開レビューはまだありません。")+'</div>';
+    $("reviews").querySelectorAll("[data-review-spoiler]").forEach(button=>{
+      button.addEventListener("click",()=>{
+        const body=document.getElementById(button.getAttribute("aria-controls"));
+        if(!body)return;
+        const expanded=button.getAttribute("aria-expanded")==="true";
+        body.hidden=expanded;
+        button.setAttribute("aria-expanded",String(!expanded));
+        button.textContent=expanded?(isEnglish()?"Show spoiler":"ネタバレを表示"):(isEnglish()?"Hide spoiler":"ネタバレを隠す");
+      });
+    });
     $("detail-loading").hidden=true;$("detail-content").hidden=false;
   }
 
