@@ -74,6 +74,20 @@ Each repository should keep a copy or a link to this standard and maintain a pro
 - Monitor slow API calls, console errors, layout shifts and large payloads.
 - Performance improvements must not compromise correctness, accessibility or security.
 
+### Additional ANIXIA requirements
+- Use lazy loading for offscreen catalogue images; provide intrinsic dimensions or aspect-ratio containers.
+- Serve responsive image sizes and modern formats such as WebP only where source rights and transformation/distribution terms permit.
+- Do not assume that a remote image URL can be copied, cached, transformed or redistributed merely because it is publicly reachable.
+
+## E. Performance
+
+- Minimize unnecessary JavaScript, duplicate libraries, oversized images and blocking resources.
+- Lazy-load offscreen media and reserve layout space to reduce layout shifts.
+- Use caching responsibly and version static assets when changing their content.
+- Avoid excessive database round trips; paginate large datasets and request only needed fields.
+- Monitor slow API calls, console errors, layout shifts and large payloads.
+- Performance improvements must not compromise correctness, accessibility or security.
+
 ## F. External APIs and data integrity
 
 - Document each data source, its terms, attribution requirements, quotas, freshness and failure behavior.
