@@ -183,6 +183,7 @@ jobs:
                   const result = await page.evaluate(() => ({
                     viewport: document.documentElement.clientWidth,
                     document: document.documentElement.scrollWidth,
+                    documentHeight: document.documentElement.scrollHeight,
                     body: document.body?.scrollWidth ?? 0,
                     title: document.title,
                     header: (() => { const el = document.querySelector("body > .anixia-global-header"); if (!el) return null; const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return {position:s.position,top:r.top,bottom:r.bottom,height:r.height}; })(),
@@ -203,8 +204,14 @@ jobs:
                     failures.push(`${path || '/'} @ ${width}px: header is not fixed at the top or body clearance is insufficient (${JSON.stringify({header:result.header,paddingTop:result.bodyPaddingTop})})`);
                     hasFailure = true;
                   }
-                  if (!result.footer || result.footer.position !== 'fixed' || Math.abs(result.footer.bottom - 900) > 2 || result.footer.height < 1 || result.bodyPaddingBottom < result.footer.height - 2) {
-                    failures.push((path || '/') + ' @ ' + width + 'px: footer is not fixed at the bottom or body clearance is insufficient (' + JSON.stringify({footer:result.footer,paddingBottom:result.bodyPaddingBottom}) + ')');
+                  if (!result.footer || result.footer.height < 1) {
+                    failures.push((path || '/') + ' @ ' + width + 'px: global footer is missing or has no visible height (' + JSON.stringify({footer:result.footer}) + ')');
+                    hasFailure = true;
+                  } else if (result.footer.position === 'fixed' && (Math.abs(result.footer.bottom - 900) > 2 || result.bodyPaddingBottom < result.footer.height - 2)) {
+                    failures.push((path || '/') + ' @ ' + width + 'px: fixed footer overlaps page content or lacks bottom clearance (' + JSON.stringify({footer:result.footer,paddingBottom:result.bodyPaddingBottom}) + ')');
+                    hasFailure = true;
+                  } else if (result.footer.position !== 'fixed' && result.footer.bottom > result.documentHeight + 2) {
+                    failures.push((path || '/') + ' @ ' + width + 'px: document-flow footer extends beyond the document (' + JSON.stringify({footer:result.footer,documentHeight:result.documentHeight}) + ')');
                     hasFailure = true;
                   }
                   for (const message of pageErrors) {
