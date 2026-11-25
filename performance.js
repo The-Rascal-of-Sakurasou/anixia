@@ -17,7 +17,8 @@
 
   // Load the same design system on every page, including admin and utility pages.
   const sharedStyleScript=Array.from(document.scripts).find(s=>s.src.includes('performance.js'));
-  if(sharedStyleScript&&!document.querySelector('link[data-anixia-unified-theme]')){
+  const hasSiteTheme=!!document.querySelector('link[rel="stylesheet"][href*="site-theme.css"]');
+  if(sharedStyleScript&&!hasSiteTheme){
     const theme=document.createElement('link');
     theme.rel='stylesheet';
     theme.href=new URL('site-theme.css?v=anixia-unified-all-pages-20261119t',sharedStyleScript.src).href;
@@ -27,7 +28,8 @@
 
   // Shared ANIXIA wordmark is loaded on both root pages and generated SEO pages.
   const performanceScript=Array.from(document.scripts).find(s=>s.src.includes('performance.js'));
-  if(performanceScript&&!document.querySelector('script[data-anixia-global-header]')){
+  const hasGlobalHeader=!!document.querySelector('script[src*="anixia-global-header.js"]');
+  if(performanceScript&&!hasGlobalHeader){
     const loader=document.createElement('script');
     loader.src=new URL('anixia-global-header.js?v=anixia-unified-nav-20261119t',performanceScript.src).href;
     loader.defer=true;
