@@ -52,7 +52,7 @@ ANIXIAでは、次の改善を優先します。
 - **画像表示の高速化**：遅延読み込み、画像サイズ最適化、権利条件に適合するWebP等の活用を進める。
 - **多言語の一貫性**：UIだけでなく作品データの日本語・英語表示と未翻訳時のフォールバックを統一する。
 
-詳細な要件と優先順位は [国内最大級アニメ総合データベース化計画](docs/ANIXIA_DOMESTIC_DATABASE_STRATEGY.md) および [共通品質基準](docs/CROSS_SITE_QUALITY_STANDARD.md) を参照してください。
+詳細な要件と優先順位は [国内最大級アニメ総合データベース化計画](docs/ANIXIA_DOMESTIC_DATABASE_STRATEGY.md)、[5サイトの参考ベンチマークとANIXIA独自仕様](docs/ANIXIA_REFERENCE_BENCHMARK.md)、[共通品質基準](docs/CROSS_SITE_QUALITY_STANDARD.md) を参照してください。
 
 ## 主な機能領域
 
