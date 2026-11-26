@@ -21,12 +21,13 @@ for (const file of allHtml) {
   const isRoot = !file.includes("/");
   const prefix = isRoot ? "/anixia/" : relative(dirname(file), ".").split(sep).join("/") + "/";
   if (!html.includes("anixia-unified-theme.css")) {
-    const tags = '\n<link rel="stylesheet" href="' + prefix + 'anixia-unified-theme.css?v=20261126-design1">\n<script src="' + prefix + 'anixia-global-header.js?v=20261126-design2" defer></script>\n';
+    const tags = '\n<link rel="stylesheet" href="' + prefix + 'anixia-unified-theme.css?v=20261126-design3">\n<script src="' + prefix + 'anixia-global-header.js?v=20261126-design3" defer></script>\n';
     const closeHead = html.toLowerCase().lastIndexOf("</head>");
     if (closeHead < 0) { skipped++; continue; }
     html = html.slice(0, closeHead) + tags + "</head>" + html.slice(closeHead + 7);
   }
-  html = html.replace(/(src=["'][^"']*anixia-global-header\.js)(?:\?[^"']*)?(["'])/g, "$1?v=20261120-4$2");
+  html = html.replace(/(src=["'][^"']*anixia-global-header\.js)(?:\?[^"']*)?(["'])/g, "$1?v=20261126-design3$2");
+  html = html.replace(/(href=["'][^"']*anixia-unified-theme\.css)(?:\?[^"']*)?(["'])/g, "$1?v=20261126-design3$2");
   if (file === "index.html") {
     html = html.replace(/\s*<a[^>]*id=["']mypage-link["'][^>]*>[\s\S]*?<\/a>/i, "");
   }
