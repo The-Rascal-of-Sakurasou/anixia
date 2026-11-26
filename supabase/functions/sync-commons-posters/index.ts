@@ -54,6 +54,70 @@ function sameToken(a: string, b: string): boolean {
   return diff === 0;
 }
 
+async function imageDimensions(url: string): Promise<{ width: number; height: number } | null> {
+  try {
+    const response = await fetch(url, {
+      headers: { Range: "bytes=0-65535" },
+      signal: AbortSignal.timeout(7000)
+    });
+    if (!response.ok || !response.body) return null;
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    while (total < 65536) {
+      const part = await reader.read();
+      if (part.done) break;
+      chunks.push(part.value);
+      total += part.value.length;
+    }
+    await reader.cancel().catch(() => {});
+    const bytes = new Uint8Array(Math.min(total, 65536));
+    let offset = 0;
+    for (const chunk of chunks) {
+      const length = Math.min(chunk.length, bytes.length - offset);
+      if (length <= 0) break;
+      bytes.set(chunk.subarray(0, length), offset);
+      offset += length;
+    }
+    const u32be = (i: number) => (((bytes[i] << 24) >>> 0) + (bytes[i+1] << 16) + (bytes[i+2] << 8) + bytes[i+3]) >>> 0;
+    const u24le = (i: number) => bytes[i] | (bytes[i+1] << 8) | (bytes[i+2] << 16);
+    const ascii = (i: number, n: number) => String.fromCharCode(...bytes.subarray(i, i+n));
+    if (bytes.length >= 24 && bytes[0]===137 && ascii(1,3)==="PNG") {
+      return { width: u32be(16), height: u32be(20) };
+    }
+    if (bytes.length >= 30 && ascii(0,4)==="RIFF" && ascii(8,4)==="WEBP") {
+      const kind = ascii(12,4);
+      if (kind === "VP8X") return { width: u24le(24)+1, height: u24le(27)+1 };
+      if (kind === "VP8 " && ascii(23,3)==="\x9d\x01\x2a") {
+        return { width: (bytes[26] | (bytes[27] << 8)) & 0x3fff, height: (bytes[28] | (bytes[29] << 8)) & 0x3fff };
+      }
+      if (kind === "VP8L" && bytes[20]===0x2f) {
+        const b1=bytes[21],b2=bytes[22],b3=bytes[23],b4=bytes[24];
+        return { width: 1 + (((b2 & 0x3f) << 8) | b1), height: 1 + (((b4 & 0x0f) << 10) | (b3 << 2) | ((b2 & 0xc0) >> 6)) };
+      }
+    }
+    if (bytes.length >= 4 && bytes[0]===0xff && bytes[1]===0xd8) {
+      let i=2;
+      while (i+9 < bytes.length) {
+        if (bytes[i] !== 0xff) { i++; continue; }
+        while (bytes[i]===0xff) i++;
+        const marker=bytes[i++];
+        if (marker===0xd8 || marker===0xd9 || (marker>=0xd0 && marker<=0xd7)) continue;
+        if (i+1>=bytes.length) break;
+        const length=(bytes[i]<<8)|bytes[i+1];
+        if (length<2 || i+length>bytes.length) break;
+        if ([0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf].includes(marker)) {
+          return { height: (bytes[i+3]<<8)|bytes[i+4], width: (bytes[i+5]<<8)|bytes[i+6] };
+        }
+        i += length;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function searchImage(work: any) {
   // Prefer Wikidata P18: the image is directly linked to this exact anime item,
   // so matching does not depend on Japanese/English filename spelling.
@@ -78,7 +142,7 @@ async function searchImage(work: any) {
           const imageParams = new URLSearchParams({
             action: "query", format: "json", formatversion: "2",
             titles: "File:" + fileName, prop: "imageinfo",
-            iiprop: "url|size|extmetadata", iiurlwidth: "600", origin: "*"
+            iiprop: "url|size|extmetadata", iiurlwidth: "900", origin: "*"
           });
           const imageResponse = await fetch("https://commons.wikimedia.org/w/api.php?" + imageParams, {
             headers: { "User-Agent": "ANIXIA/1.0 (https://the-rascal-of-sakurasou.github.io/anixia/; public anime database)" }
@@ -90,13 +154,14 @@ async function searchImage(work: any) {
             const width = Number(info?.width || 0), height = Number(info?.height || 0);
             const license = licenseInfo(info?.extmetadata || {});
             const isLogo = /logo|ロゴ/i.test(fileName);
-            const validShape = !isLogo && width >= 200 && height >= 280 &&
+            const validShape = !isLogo && width >= 900 && height >= 1260 &&
               width / height >= 0.38 && width / height <= 0.9;
             if (info?.thumburl && info?.descriptionurl && String(info?.mime || "").startsWith("image/") &&
                 String(info.thumburl).startsWith("https://upload.wikimedia.org/") &&
                 validShape && license) {
               return {
                 url: info.thumburl,
+                width, height,
                 id: page.title,
                 page: info.descriptionurl,
                 attribution: license.attribution,
@@ -130,7 +195,7 @@ async function searchImage(work: any) {
             action: "query", format: "json", formatversion: "2",
             generator: "categorymembers", gcmtitle: "Category:" + commonsCategory,
             gcmnamespace: "6", gcmlimit: "50", prop: "imageinfo",
-            iiprop: "url|size|extmetadata", iiurlwidth: "600", origin: "*"
+            iiprop: "url|size|extmetadata", iiurlwidth: "900", origin: "*"
           });
           const categoryResponse = await fetch("https://commons.wikimedia.org/w/api.php?" + categoryParams, {
             headers: { "User-Agent": "ANIXIA/1.0 (https://the-rascal-of-sakurasou.github.io/anixia/; public anime database)" }
@@ -148,7 +213,7 @@ async function searchImage(work: any) {
               if (candidateHasVariantTerm && !workHasVariantTerm) return null;
               if (!posterFile) return null;
               const width = Number(info.width || 0), height = Number(info.height || 0);
-              const validShape = width >= 200 && height >= 280 &&
+              const validShape = width >= 900 && height >= 1260 &&
                 width / height >= 0.38 && width / height <= 0.9;
               const license = licenseInfo(info.extmetadata || {});
               if (!validShape || !license) return null;
@@ -158,6 +223,7 @@ async function searchImage(work: any) {
               const best = categoryMatches[0];
               return {
                 url: best.info.thumburl,
+                width: Number(best.info.width || 0), height: Number(best.info.height || 0),
                 id: best.page.title,
                 page: best.info.descriptionurl,
                 attribution: best.license.attribution,
@@ -179,7 +245,7 @@ async function searchImage(work: any) {
     const params = new URLSearchParams({
       action: "query", format: "json", formatversion: "2",
       generator: "search", gsrsearch: searchTerm, gsrnamespace: "6", gsrlimit: "15",
-      prop: "imageinfo", iiprop: "url|size|extmetadata", iiurlwidth: "600",
+      prop: "imageinfo", iiprop: "url|size|extmetadata", iiurlwidth: "900",
       origin: "*"
     });
     const response = await fetch("https://commons.wikimedia.org/w/api.php?" + params, {
@@ -208,7 +274,7 @@ async function searchImage(work: any) {
       const contains = fileName.includes(target) || description.includes(target);
       if (!contains) return null;
       const width = Number(info.width || 0), height = Number(info.height || 0);
-      const validShape = width >= 200 && height >= 280 &&
+      const validShape = width >= 900 && height >= 1260 &&
         width / height >= 0.38 && width / height <= 0.9;
       if (!validShape) return null;
       const license = licenseInfo(info.extmetadata || {});
@@ -220,6 +286,7 @@ async function searchImage(work: any) {
       const best = ranked[0];
       return {
         url: best.info.thumburl,
+        width: Number(best.info.width || 0), height: Number(best.info.height || 0),
         id: best.page.title,
         page: best.info.descriptionurl,
         attribution: best.license.attribution,
@@ -271,6 +338,7 @@ Deno.serve(async (req: Request) => {
   try { body = await req.json(); } catch { body = {}; }
   const limit = Math.min(Math.max(Number(body.limit) || 10, 1), 30);
   const force = body.force === true;
+  const upgradeExisting = body.upgradeExisting === true;
   const requestedIds = Array.isArray(body.animeIds)
     ? [...new Set(body.animeIds.map((v: unknown) => String(v || "")).filter((v: string) => /^[0-9a-f-]{36}$/i.test(v)))].slice(0, 30)
     : [];
@@ -281,13 +349,13 @@ Deno.serve(async (req: Request) => {
     offset = Math.max(0, Number(state.data?.next_offset) || 0);
   }
   const buildQuery = (startAt: number) => {
-    let query = db.from("anime").select("id,title,title_ja,title_kana,release_year,poster_url,source_id")
-      .eq("is_published", true)
-      .order("release_year", { ascending: false, nullsFirst: false })
-      .order("id", { ascending: true });
+    let query = db.from("anime").select("id,title,title_ja,title_kana,release_year,poster_url,poster_source,source_id")
+      ; // Process only missing posters in normal sync; upgrade mode may inspect existing posters.
     if (requestedIds.length) query = query.in("id", requestedIds);
-    // Keep pagination over the stable full catalog; filtering out updated rows here
+    // Keep pagination over a stable full catalog; filtering out updated rows here
     // would shift offsets and cause later titles to be skipped.
+    query = query.order("release_year", { ascending: false, nullsFirst: false })
+      .order("id", { ascending: true });
     return query.range(startAt, startAt + limit - 1);
   };
   let { data: works, error: listError } = await buildQuery(offset);
@@ -306,8 +374,14 @@ Deno.serve(async (req: Request) => {
 
   const results = { scanned: (works || []).length, updated: 0, unmatched: [] as string[], errors: [] as string[] };
   for (const work of works || []) {
-    if (!force && work.poster_url) continue;
+    if (!force && work.poster_url && !(upgradeExisting && work.poster_source === "anilist")) continue;
     try {
+      if (upgradeExisting && work.poster_url && work.poster_source === "anilist") {
+        const currentSize = await imageDimensions(work.poster_url);
+        // Unknown dimensions are left untouched; never replace an image unless
+        // its low resolution is confirmed.
+        if (!currentSize || (currentSize.width >= 600 && currentSize.height >= 840)) continue;
+      }
       const image = await searchImage(work);
       if (!image) { results.unmatched.push(work.title_ja || work.title || work.id); continue; }
       const { data: updatedRecord, error } = await db.from("anime").update({
