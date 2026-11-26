@@ -1,9 +1,10 @@
-name: Update ANIXIA genre pages
+name: Apply unified ANIXIA design to all pages
 on:
   push:
     branches: [main]
     paths:
       - "scripts/generate-anime-seo-pages.mjs"
+      - "scripts/apply-unified-design.mjs"
       - "scripts/update-genre-pages.mjs"
       - ".github/workflows/apply-unified-anixia-design.yml"
   workflow_dispatch:
@@ -22,6 +23,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Apply shared design and asset versions to every HTML page
+        run: node scripts/apply-unified-design.mjs
       - name: Update generated genre pages
         run: node scripts/update-genre-pages.mjs
       - name: Commit generated genre pages
@@ -29,8 +32,8 @@ jobs:
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add genre
-            git commit -m "Apply responsive design to generated genre pages"
+            git add -A
+            git commit -m "Apply unified ANIXIA design across all pages"
             git pull --rebase origin main
             git push
           fi
