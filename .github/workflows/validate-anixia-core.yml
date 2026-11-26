@@ -48,20 +48,35 @@ jobs:
         run: deno check --no-lock supabase/functions/sync-anilist-posters/index.ts
       - name: Check AniList catalog policy guard
         run: deno check --no-lock supabase/functions/sync-anilist-catalog/index.ts
+      - name: Check Wikidata catalog sync Edge Function
+        run: deno check --no-lock supabase/functions/sync-wikidata-catalog/index.ts
       - name: Enforce AniList image-only source policy
         run: |
           node --input-type=module <<'NODE'
           import { readFileSync } from "node:fs";
           const poster = readFileSync("supabase/functions/sync-anilist-posters/index.ts", "utf8");
           const catalog = readFileSync("supabase/functions/sync-anilist-catalog/index.ts", "utf8");
+          const wikidataCatalog = readFileSync("supabase/functions/sync-wikidata-catalog/index.ts", "utf8");
           const transparency = readFileSync("data-sources.html", "utf8");
           const forbidden = /episode_count|titleJaUpdated|episodeCountUpdated|metadataPatch|media\.episodes|media\.status/;
           if (forbidden.test(poster)) throw new Error("AniList poster sync must not read or write catalog metadata.");
           if (!catalog.includes("SOURCE_POLICY_DISABLED") || !catalog.includes("410")) {
             throw new Error("AniList catalog ingestion must remain disabled.");
           }
+          if (wikidataCatalog.includes("fetchAniListNativeTitles") ||
+              wikidataCatalog.includes("titleRepairsFromAniList") ||
+              wikidataCatalog.includes("graphql.anilist.co")) {
+            throw new Error("Wikidata catalog sync must not fetch AniList metadata.");
+          }
+          const reviewStart = wikidataCatalog.indexOf("async function autoReviewWikidata");
+          const reviewEnd = wikidataCatalog.indexOf("\\nDeno.serve", reviewStart);
+          const review = wikidataCatalog.slice(reviewStart, reviewEnd);
+          if (reviewStart < 0 || !review.includes('.eq("source","wikidata").eq("is_published",false)') ||
+              !review.includes('reviewedSources:["wikidata"]')) {
+            throw new Error("Automatic catalog review must process Wikidata records only.");
+          }
           if (!transparency.includes("AniList（作品画像の照合のみ）")) {
             throw new Error("Public source policy must disclose AniList image-only use.");
           }
-          console.log("AniList image-only policy checks passed.");
+          console.log("AniList image-only and Wikidata-only review policy checks passed.");
           NODE
