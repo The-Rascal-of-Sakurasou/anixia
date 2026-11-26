@@ -69,7 +69,7 @@ jobs:
             throw new Error("Wikidata catalog sync must not fetch AniList metadata.");
           }
           const reviewStart = wikidataCatalog.indexOf("async function autoReviewWikidata");
-          const reviewEnd = wikidataCatalog.indexOf("\\nDeno.serve", reviewStart);
+          const reviewEnd = wikidataCatalog.indexOf("Deno.serve", reviewStart);
           const review = wikidataCatalog.slice(reviewStart, reviewEnd);
           if (reviewStart < 0 || !review.includes('.eq("source","wikidata").eq("is_published",false)') ||
               !review.includes('reviewedSources:["wikidata"]')) {
