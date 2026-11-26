@@ -86,6 +86,18 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Unauthorized" }, 401);
   }
 
+  // Fail closed until the TMDB source has passed ANIXIA's rights review.
+  const approval = await db.from("catalog_sources")
+    .select("is_enabled,rights_review_status")
+    .eq("code", "tmdb")
+    .single();
+  if (approval.error) {
+    return json({ error: "TMDB source approval could not be checked." }, 503);
+  }
+  if (!approval.data?.is_enabled || approval.data.rights_review_status !== "approved") {
+    return json({ error: "TMDB source is not approved for synchronization." }, 423);
+  }
+
   const tmdbToken = Deno.env.get("TMDB_API_READ_ACCESS_TOKEN");
   if (!tmdbToken) return json({
     error: "TMDB_API_READ_ACCESS_TOKEN secret is not configured.",
