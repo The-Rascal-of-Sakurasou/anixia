@@ -42,9 +42,11 @@ function optimize(html, file) {
   // A redirect-only landing page has no need to register performance features.
   // Keep this exclusion here so the automated optimizer does not re-add the script.
   const needsPerformanceScript = relativePath !== "admin.html";
-  if (needsPerformanceScript &&
-      !html.includes('src="' + performanceScript + '"') &&
-      !html.includes("src='" + performanceScript + "'")) {
+  // Treat versioned and relative performance.js URLs as the same script.
+  // This prevents the optimizer from adding a second copy to pages that already
+  // load performance.js with a cache-busting query string.
+  const hasPerformanceScript = /\\bsrc=[\"'][^\"']*performance\\.js(?:[?#][^\"']*)?[\"']/i.test(html);
+  if (needsPerformanceScript && !hasPerformanceScript) {
     html = html.replace(/<\/head>/i,
       '<script src="' + performanceScript + '" defer></script>\n</head>');
   }
