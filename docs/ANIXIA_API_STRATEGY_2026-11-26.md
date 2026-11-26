@@ -37,6 +37,7 @@ APIは数を増やすのではなく、1つの情報項目に対して主担当�
 条件・注意:
 - 構造化データはCC0。画像・あらすじ本文の利用許諾を意味しない。
 - SPARQL Query Serviceは60秒のクエリ期限、クライアントごとの処理時間制限、同時実行数制限がある。大規模な全件走査を短い間隔で繰り返さない。
+- 現在の `sync-wikidata-catalog` と `sync-wikidata-episodes` はWDQS v1（`query.wikidata.org/sparql`）を利用している。公式案内ではv1は2027年6月まで継続予定だが、2027年2月から性能低下の可能性が示されている。2027年1月までにv2互換性テストを行い、v1の性能低下前に切り替える。v2では一部のBlazegraph独自拡張が使えないため、クエリ単位で結果比較を行う。
 - SPARQLは候補発見・ID一覧取得に限定し、詳細情報はWikidata Action APIのエンティティ取得で必要分だけ取得する。
 - 1つのワーカーで順次実行し、User-Agent、Retry-After、指数バックオフ、カーソル保存を必須にする。
 - Wikidataだけで作品の正確性・収録適格性を確定しない。日本語タイトル欠落、作品形式不明、重複疑いは審査キューへ送る。
@@ -216,10 +217,11 @@ APIが返した値で、ANIXIA管理者が検証・修正した値を無条件�
 
 ### P0 — API規約・セキュリティ
 1. AniListの新規同期を停止（実施済み）。
-2. 既存AniList由来画像・IDの利用可否を確認し、置換計画を作る。
-3. Annictのトークンがread-onlyであること、公開データの返却方式、レート制限処理を検証する。
-4. TMDBの利用条件・ロゴ・表示文・画像権利の確認を完了する。
-5. Edge Function Secrets以外に秘密鍵が露出していないことを確認する。
+2. WDQS v1からv2への移行テストを2027年1月までに完了する。
+3. 既存AniList由来画像・IDの利用可否を確認し、置換計画を作る。
+4. Annictのトークンがread-onlyであること、公開データの返却方式、レート制限処理を検証する。
+5. TMDBの利用条件・ロゴ・表示文・画像権利の確認を完了する。
+6. Edge Function Secrets以外に秘密鍵が露出していないことを確認する。
 
 ### P1 — データ取得の効率化
 1. API共通アダプターと同期ランナーを設計する。
@@ -241,7 +243,7 @@ APIが返した値で、ANIXIA管理者が検証・修正した値を無条件�
 - Annict レート制限: https://wikino.app/s/annict/pages/419
 - AniList API Terms of Use: https://docs.anilist.co/guide/terms-of-use
 - AniList Rate Limiting: https://docs.anilist.co/guide/rate-limiting
-- Wikidata Query Service User Manual: https://www.mediawiki.org/wiki/Wikidata_Query_Service/User_Manual
+- Wikidata Query Service User Manual / v1-to-v2 migration notice: https://www.mediawiki.org/wiki/Wikidata_Query_Service/User_Manual
 - Syoboi Calendar Help: https://docs.cal.syoboi.jp/about/
 - TMDB API FAQ: https://developer.themoviedb.org/docs/faq
 - TMDB API Rate Limiting: https://developer.themoviedb.org/docs/rate-limiting
