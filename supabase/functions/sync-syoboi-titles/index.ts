@@ -148,7 +148,7 @@ Deno.serve(async (req: Request) => {
     const mode = body?.mode === "preview" ? "preview" : "sync";
     const requestedLimit = Number(body?.limit);
     const batchLimit = Number.isSafeInteger(requestedLimit)
-      ? Math.max(100, Math.min(1000, requestedLimit))
+      ? Math.max(100, Math.min(200, requestedLimit))
       : 1000;
     const stateResult = await db.from("catalog_sync_state")
       .select("next_offset")
