@@ -66,7 +66,7 @@
       .anixia-footer-logo .anixia-logo-xia{color:#202522!important}
       .anixia-footer-nav{display:flex!important;flex-wrap:wrap!important;justify-content:flex-start!important;gap:9px 18px!important;padding:0 0 16px!important;border:0!important}
       .anixia-footer-nav a{color:#56615B!important;text-decoration:none!important;font-size:12px!important}
-      .anixia-footer-nav a:hover{color:#fff!important}
+      .anixia-footer-nav a:hover{color:#028F56!important}
       .anixia-footer-bottom{display:flex!important;justify-content:flex-start!important;padding-top:12px!important;border-top:1px solid #222!important;color:#66716B!important;font-size:10px!important}
       .anixia-admin-login{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:30px!important;margin-top:8px!important;padding:0 10px!important;border:1px solid #03AF6A!important;border-radius:6px!important;color:#fff!important;background:#03AF6A!important;font-size:11px!important;font-weight:750!important;text-decoration:none!important;opacity:1!important;cursor:pointer!important}.anixia-admin-login:hover{background:#028f56!important;border-color:#028f56!important;color:#fff!important}
       .anixia-admin-login,.anixia-admin-login:visited,.anixia-admin-login:active{color:#fff!important;background:#03AF6A!important;background-color:#03AF6A!important;border-color:#03AF6A!important;opacity:1!important}.anixia-admin-login:hover{color:#fff!important;background:#028f56!important;background-color:#028f56!important;border-color:#028f56!important}.anixia-admin-login:focus-visible,.anixia-global-header a:focus-visible,.anixia-global-header button:focus-visible,.anixia-global-footer a:focus-visible{outline:3px solid #FFD166!important;outline-offset:3px!important}
@@ -157,7 +157,7 @@
       a.style.setProperty("color", "#45514A", "important");
       a.style.setProperty("opacity", "1", "important");
     });
-    header.querySelectorAll(".anixia-header-actions .anixia-header-button").forEach(a => a.style.setProperty("color", "#FFFFFF", "important"));
+    header.querySelectorAll(".anixia-header-actions .anixia-header-button").forEach(a => a.style.setProperty("color", "#45514A", "important"));
     const logo = header.querySelector(".anixia-logo");
     if (logo) logo.style.setProperty("color", "#03AF6A", "important");
     const logoAccent = header.querySelector(".anixia-logo-xia");
