@@ -51,6 +51,18 @@ body :where(.anixia-screen-description){font-size:13px!important;color:var(--ax-
 body :where(.anixia-screen-panel,.anixia-screen-card,.anixia-screen-empty,.anixia-screen-status,.anixia-screen-list-row){
  background:#fff!important;border:1px solid var(--ax-line)!important;border-radius:5px!important;box-shadow:none!important
 }
+body :where(.card,.panel,.profile-card,.list-item,.review-item,.feature-card,.genre-card,.recommendation-card,.quick-card,.anixia-detail-panel,.anixia-detail-card,.detail-panel,.detail-section,.anime-detail-section){
+ border:1px solid var(--ax-line)!important;border-radius:5px!important;box-shadow:none!important
+}
+body :where(button,input[type=button],input[type=submit],input[type=reset],.btn,.button,a[role=button]){
+ border-radius:5px!important
+}
+body :where(.btn-primary,.button-primary,.primary,.anixia-primary-button){
+ background:var(--ax-brand)!important;border-color:var(--ax-brand)!important;color:#fff!important
+}
+body :where(.btn-primary:hover,.button-primary:hover,.primary:hover,.anixia-primary-button:hover){
+ background:var(--ax-brand-hover)!important;border-color:var(--ax-brand-hover)!important
+}
 body :where(.anixia-screen-panel){padding:18px!important}
 body :where(.anixia-screen-card){padding:12px!important}
 body :where(.anixia-screen-card:hover){border-color:#A8D9C0!important;box-shadow:0 2px 8px rgba(24,66,44,.055)!important}
