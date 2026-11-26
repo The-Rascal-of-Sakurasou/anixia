@@ -93,23 +93,15 @@ function sameToken(a: string, b: string): boolean {
 function hasJapaneseReading(value: string): boolean {
   return /[\u3040-\u30ff]/u.test(value) && value.length <= 200;
 }
-async function loadPublishedAnime(db: any): Promise<Row[]> {
-  const all: Row[] = [];
-  const pageSize = 1000;
-  const maximumRows = 20000;
-  for (let offset = 0; offset < maximumRows; offset += pageSize) {
-    const result = await db.from("anime")
-      .select("id,title,title_ja,title_kana,syobocal_tid")
-      .eq("is_published", true)
-      .order("title_ja", { ascending: true })
-      .order("id", { ascending: true })
-      .range(offset, offset + pageSize - 1);
-    if (result.error) throw result.error;
-    const page = result.data || [];
-    all.push(...page);
-    if (page.length < pageSize) break;
-  }
-  return all;
+async function loadPublishedAnime(db: any, offset: number, limit: number): Promise<{ rows: Row[]; total: number }> {
+  const result = await db.from("anime")
+    .select("id,title,title_ja,title_kana,syobocal_tid", { count: "exact" })
+    .eq("is_published", true)
+    .order("title_ja", { ascending: true })
+    .order("id", { ascending: true })
+    .range(offset, offset + limit - 1);
+  if (result.error) throw result.error;
+  return { rows: result.data || [], total: Number(result.count || 0) };
 }
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("Origin");
@@ -154,13 +146,34 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json().catch(() => ({}));
     const mode = body?.mode === "preview" ? "preview" : "sync";
-    const anime = await loadPublishedAnime(db);
+    const requestedLimit = Number(body?.limit);
+    const batchLimit = Number.isSafeInteger(requestedLimit)
+      ? Math.max(100, Math.min(1000, requestedLimit))
+      : 1000;
+    const stateResult = await db.from("catalog_sync_state")
+      .select("next_offset")
+      .eq("source", "syoboi-titles")
+      .maybeSingle();
+    if (stateResult.error) throw stateResult.error;
+    const explicitOffset = Number(body?.offset);
+    const requestedOffset = Number.isSafeInteger(explicitOffset) && explicitOffset >= 0
+      ? explicitOffset
+      : Math.max(0, Number(stateResult.data?.next_offset || 0));
+    let offset = requestedOffset;
+    let catalog = await loadPublishedAnime(db, offset, batchLimit);
+    if (catalog.total > 0 && offset >= catalog.total) {
+      offset = 0;
+      catalog = await loadPublishedAnime(db, offset, batchLimit);
+    }
+    const anime = catalog.rows;
     const publishedIds = new Set(anime.map(work => text(work.id)));
-    const aliasesResult = await db.from("anime_titles")
-      .select("anime_id,title")
-      .eq("language_code", "ja")
-      .in("title_type", ["main", "short", "synonym"])
-      .range(0, 4999);
+    const aliasesResult = anime.length
+      ? await db.from("anime_titles")
+        .select("anime_id,title")
+        .eq("language_code", "ja")
+        .in("title_type", ["main", "short", "synonym"])
+        .in("anime_id", anime.map(work => text(work.id)))
+      : { data: [], error: null };
     if (aliasesResult.error) throw aliasesResult.error;
     const aliasesByAnime = new Map<string, string[]>();
     for (const row of aliasesResult.data || []) {
@@ -231,7 +244,10 @@ Deno.serve(async (req: Request) => {
     if (mode === "preview") {
       return json({
         status: "preview",
-        publishedAnime: anime.length,
+        publishedAnime: catalog.total,
+        processedAnime: anime.length,
+        offset,
+        nextOffset: anime.length === 0 || offset + anime.length >= catalog.total ? 0 : offset + anime.length,
         japaneseAliasesLoaded: [...aliasesByAnime.values()].reduce((sum, values) => sum + values.length, 0),
         syoboiTitles: list.length,
         safeExactMatches: safeMatches.length,
@@ -250,8 +266,11 @@ Deno.serve(async (req: Request) => {
     if (run.error) throw run.error;
 
     try {
-      const existingTitlesResult = await db.from("anime_titles")
-        .select("anime_id,title,language_code,title_type").range(0, 4999);
+      const existingTitlesResult = anime.length
+        ? await db.from("anime_titles")
+          .select("anime_id,title,language_code,title_type")
+          .in("anime_id", anime.map(work => text(work.id)))
+        : { data: [], error: null };
       if (existingTitlesResult.error) throw existingTitlesResult.error;
       const titleKeys = new Set((existingTitlesResult.data || []).map((row: Row) =>
         [text(row.anime_id), text(row.language_code), text(row.title_type), normalize(row.title)].join("|")
@@ -304,14 +323,23 @@ Deno.serve(async (req: Request) => {
         error_message: null
       }).eq("id", run.data.id);
       if (finished.error) throw finished.error;
+      const nextOffset = anime.length === 0 || offset + anime.length >= catalog.total
+        ? 0
+        : offset + anime.length;
       const state = await db.from("catalog_sync_state").upsert({
-        source: "syoboi-titles", next_offset: 0,
-        last_success_at: finishedAt, updated_at: finishedAt
+        source: "syoboi-titles",
+        next_offset: nextOffset,
+        last_success_at: finishedAt,
+        updated_at: finishedAt
       }, { onConflict: "source" });
       if (state.error) throw state.error;
       return json({
         status: "completed",
-        publishedAnime: anime.length,
+        publishedAnime: catalog.total,
+        processedAnime: anime.length,
+        offset,
+        nextOffset,
+        catalogPassComplete: nextOffset === 0,
         syoboiTitles: list.length,
         exactMatches: safeMatches.length,
         linked,
