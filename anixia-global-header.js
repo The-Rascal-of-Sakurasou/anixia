@@ -36,7 +36,7 @@
     if (!document.querySelector('link[data-anixia-design-refresh="true"]')) {
       const refreshStyle = document.createElement("link");
       refreshStyle.rel = "stylesheet";
-      refreshStyle.href = ROOT + "anixia-design-refresh.css?v=20261126-1";
+      refreshStyle.href = ROOT + "anixia-design-refresh.css?v=20261126-2";
       refreshStyle.dataset.anixiaDesignRefresh = "true";
       document.head.appendChild(refreshStyle);
     }
