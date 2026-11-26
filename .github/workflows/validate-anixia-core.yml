@@ -7,7 +7,11 @@ on:
       - "anixia-auth-pages.js"
       - "anixia-genres.js"
       - "genres.html"
+      - "discover.html"
+      - "anime.html"
+      - "index.html"
       - "supabase/functions/**"
+      - "supabase/migrations/**"
       - "data-sources.html"
       - ".github/workflows/validate-anixia-core.yml"
   push:
@@ -16,7 +20,12 @@ on:
       - "anixia-client.js"
       - "anixia-admin.js"
       - "anixia-auth-pages.js"
+      - "genres.html"
+      - "discover.html"
+      - "anime.html"
+      - "index.html"
       - "supabase/functions/**"
+      - "supabase/migrations/**"
       - "data-sources.html"
       - ".github/workflows/validate-anixia-core.yml"
 
@@ -64,6 +73,8 @@ jobs:
           const catalog = readFileSync("supabase/functions/sync-anilist-catalog/index.ts", "utf8");
           const wikidataCatalog = readFileSync("supabase/functions/sync-wikidata-catalog/index.ts", "utf8");
           const wikidataGenres = readFileSync("supabase/functions/sync-wikidata-genres/index.ts", "utf8");
+          const client = readFileSync("anixia-client.js", "utf8");
+          const genreMigration = readFileSync("supabase/migrations/20261126072000_separate_genre_filters_from_media_types.sql", "utf8");
           const transparency = readFileSync("data-sources.html", "utf8");
           const forbidden = /episode_count|titleJaUpdated|episodeCountUpdated|metadataPatch|media\.episodes|media\.status/;
           if (forbidden.test(poster)) throw new Error("AniList poster sync must not read or write catalog metadata.");
@@ -92,6 +103,11 @@ jobs:
           if (!wikidataGenres.includes('rights_review_status') ||
               !wikidataGenres.includes('CANONICAL_GENRES.has')) {
             throw new Error("Wikidata genre sync must keep the source-rights gate and canonical mapping.");
+          }
+          if ((client.match(/eq\("is_filterable", true\)/g) || []).length < 2 ||
+              !genreMigration.includes("ADD COLUMN IF NOT EXISTS is_filterable") ||
+              !genreMigration.includes("SET is_filterable = false")) {
+            throw new Error("Public genre selectors must hide reviewed media/production classifications.");
           }
           if (!transparency.includes("AniList（作品画像の照合のみ）")) {
             throw new Error("Public source policy must disclose AniList image-only use.");
