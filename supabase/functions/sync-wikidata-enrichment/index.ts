@@ -197,7 +197,8 @@ async function ensureEntityRows(
   externalTable: string,
   idColumn: string,
   entities: AnyRecord[],
-  nameFields: (entity: AnyRecord) => AnyRecord
+  nameFields: (entity: AnyRecord) => AnyRecord,
+  nameJaColumn: string | null = "name_ja"
 ): Promise<Map<string, string>> {
   const ids = [...new Set(entities.map(e => e.id).filter((v): v is string => Boolean(qid(v))))];
   const map = new Map<string, string>();
@@ -238,28 +239,28 @@ async function ensureEntityRows(
     if (savedExternal.error) throw savedExternal.error;
   }
 
-  // Correct legacy "Japanese" labels that were actually English/romaji fallbacks.
-  const mappedIds = [...new Set(ids.map(externalId => map.get(externalId)).filter(Boolean))];
-  if (mappedIds.length) {
-    const current = await db.from(table).select("id,name_ja").in("id", mappedIds);
+  // Correct legacy Japanese labels only for tables that actually store one.
+  // Some entity tables (notably series) use name_ro/name_en instead.
+  if (nameJaColumn) {
+    const current = await db.from(table).select("id," + nameJaColumn).in("id", mappedIds);
     if (current.error) throw current.error;
     const currentById = new Map((current.data || []).map((row: AnyRecord) => [String(row.id), row]));
     const entitiesByExternalId = new Map(entities.map(entity => [String(entity.id), entity]));
-    const repairs: { id: string; name_ja: string | null }[] = [];
+    const repairs: AnyRecord[] = [];
     for (const externalId of ids) {
       const entityId = map.get(externalId);
       if (!entityId) continue;
       const existing = currentById.get(entityId);
-      const currentName = String(existing?.name_ja || "");
+      const currentName = String(existing?.[nameJaColumn] || "");
       if (/[\u3040-\u30ff\u3400-\u9fff]/u.test(currentName)) continue;
       const entity = entitiesByExternalId.get(externalId);
       if (!entity) continue;
-      repairs.push({ id: entityId, name_ja: japaneseLabel(entity) });
+      repairs.push({ id: entityId, value: japaneseLabel(entity) });
     }
     for (let start = 0; start < repairs.length; start += 10) {
       const batch = repairs.slice(start, start + 10);
       const results = await Promise.all(batch.map(row =>
-        db.from(table).update({ name_ja: row.name_ja }).eq("id", row.id)
+        db.from(table).update({ [nameJaColumn]: row.value }).eq("id", row.id)
       ));
       const failed = results.find(result => result.error);
       if (failed?.error) throw failed.error;
@@ -758,7 +759,7 @@ Deno.serve(async (req: Request) => {
           seriesEntities, e => ({
             name: label(e, "ja") || label(e, "en"),
             name_en: label(e, "en")
-          }));
+          }), null);
         counts.series = seriesEntities.length;
         for (const work of works) {
           const entity = workEntities.get(String(work.source_id));
