@@ -190,6 +190,7 @@ Deno.serve(async (req: Request) => {
       .select("id,source_id,release_year", { count: "exact" })
       .eq("source", SOURCE).eq("is_published", true).not("source_id", "is", null)
       .order("release_year", { ascending: true }).order("source_id", { ascending: true })
+      .order("id", { ascending: true })
       .range(offset, offset + limit - 1);
     if (worksResult.error) throw worksResult.error;
     const works = (worksResult.data || []).filter((work: AnyRecord) => qid(String(work.source_id || "")));
