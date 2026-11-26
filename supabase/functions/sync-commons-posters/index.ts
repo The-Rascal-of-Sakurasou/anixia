@@ -121,7 +121,7 @@ async function imageDimensions(url: string): Promise<{ width: number; height: nu
 async function searchImage(work: any) {
   // Prefer Wikidata P18: the image is directly linked to this exact anime item,
   // so matching does not depend on Japanese/English filename spelling.
-  const qid = String(work.source_id || "");
+  const qid = String(work.wikidata_id || work.source_id || "");
   const extraTitles: string[] = [];
   if (/^Q[1-9][0-9]*$/.test(qid)) {
     try {
@@ -370,6 +370,26 @@ Deno.serve(async (req: Request) => {
     works = firstPage.data;
     listError = firstPage.error;
     if (listError) return json({ error: listError.message }, 500);
+  }
+
+  // Prefer the Wikidata mapping from the external-ID table. The anime.source_id
+  // field can contain an AniList/MAL numeric ID for legacy-imported records,
+  // even when a valid Wikidata QID is linked separately.
+  if (works?.length) {
+    const externalIds = await db.from("anime_external_ids")
+      .select("anime_id,external_id")
+      .eq("source", "wikidata")
+      .in("anime_id", works.map((work: any) => work.id));
+    if (externalIds.error) return json({ error: "Wikidata ID mapping could not be loaded: " + externalIds.error.message }, 500);
+    const wikidataByAnime = new Map<string, string>();
+    for (const row of externalIds.data || []) {
+      if (/^Q[1-9][0-9]*$/.test(String(row.external_id || ""))) {
+        wikidataByAnime.set(String(row.anime_id), String(row.external_id));
+      }
+    }
+    for (const work of works) {
+      work.wikidata_id = wikidataByAnime.get(String(work.id)) || null;
+    }
   }
 
   const results = { scanned: (works || []).length, updated: 0, unmatched: [] as string[], errors: [] as string[] };
