@@ -44,27 +44,44 @@
     }
     years.value = params.get("year") || "";
 
-    try {
-      const genres = await ANIXIA.getGenres();
-      genres.forEach(g => $("genre").add(new Option(en() ? englishLabel(g) : (g.name_ja || g.name), g.id)));
-      $("genre").value = params.get("genre") || "";
-    } catch (e) { console.warn("genre options unavailable", e); }
+    const [genreResult, studioResult, tagResult] = await Promise.allSettled([
+      ANIXIA.getGenres(),
+      ANIXIA.getStudios(),
+      ANIXIA.getTags()
+    ]);
 
-    try {
-      const studios = await ANIXIA.getStudios();
-      studios.forEach(s => $("studio").add(new Option(en() ? englishLabel(s) : (s.name_ja || s.name), s.id)));
-      $("studio").value = params.get("studio") || "";
-    } catch (e) { console.warn("studio options unavailable", e); }
+    if (genreResult.status === "fulfilled") {
+      genreResult.value.forEach(g => $("genre").add(
+        new Option(en() ? englishLabel(g) : (g.name_ja || g.name), g.id)
+      ));
+    } else {
+      console.warn("genre options unavailable", genreResult.reason);
+    }
+    $("genre").value = params.get("genre") || "";
 
-    try {
-      const tags = await ANIXIA.getTags();
-      tags.forEach(t => $("tag").add(new Option(en() ? englishLabel(t) : (t.name_ja || t.name), t.id)));
+    if (studioResult.status === "fulfilled") {
+      studioResult.value.forEach(s => $("studio").add(
+        new Option(en() ? englishLabel(s) : (s.name_ja || s.name), s.id)
+      ));
+    } else {
+      console.warn("studio options unavailable", studioResult.reason);
+    }
+    $("studio").value = params.get("studio") || "";
+
+    if (tagResult.status === "fulfilled") {
+      tagResult.value.forEach(tag => $("tag").add(
+        new Option(en() ? englishLabel(tag) : (tag.name_ja || tag.name), tag.id)
+      ));
       const selected = new Set([
         ...params.getAll("tag"),
         ...(params.get("tags") || "").split(",").filter(Boolean)
       ]);
-      Array.from($("tag").options).forEach(option => { option.selected = selected.has(option.value); });
-    } catch (e) { console.warn("tag options unavailable", e); }
+      Array.from($("tag").options).forEach(option => {
+        option.selected = selected.has(option.value);
+      });
+    } else {
+      console.warn("tag options unavailable", tagResult.reason);
+    }
   }
 
   async function search() {
