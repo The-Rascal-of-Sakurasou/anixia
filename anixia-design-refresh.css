@@ -305,3 +305,12 @@ body.home-page .anixia-footer-inner>small{margin-left:auto!important;color:var(-
  body.home-page .anixia-footer-links{flex:0 0 100%!important;order:3!important}
  body.home-page .anixia-footer-inner>small{margin-left:auto!important}
 }
+
+
+/* Homepage rating preview */
+body.home-page .anixia-ranking-grid{align-items:start!important}
+body.home-page .anixia-home-ranked-card{position:relative!important;min-width:0!important;padding-top:21px!important}
+body.home-page .anixia-home-rank-no{position:absolute!important;top:0!important;left:1px!important;color:var(--ax-brand-hover)!important;font-size:11px!important;font-weight:850!important;font-variant-numeric:tabular-nums!important;letter-spacing:.06em!important}
+body.home-page .anixia-home-ranked-card .anixia-work-card{display:block!important}
+body.home-page .anixia-ranking-grid .anixia-state{grid-column:1/-1!important}
+@media(max-width:760px){body.home-page .anixia-home-ranked-card{padding-top:19px!important}}
