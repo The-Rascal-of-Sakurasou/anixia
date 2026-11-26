@@ -333,7 +333,7 @@ async function autoReviewWikidata(db:any){
   error_message:JSON.stringify({held:pending.length-approvedIds.length,reasons,titleRepairsApplied,titleRepairsFromWikidata,}).slice(0,1000)
  }).eq("id",run.data.id);
  if(finish.error)throw finish.error;
- return {scanned:pending.length,autoApproved:approvedIds.length,heldForReview:pending.length-approvedIds.length,holdReasons:reasons,titleRepairsApplied,titleRepairsFromWikidata,,runId:run.data.id,reviewedSources:["wikidata"],reviewDatasetSizes:{allAnime:all.length,sourceExternalIds:external.length,genres:genres.length,animeGenreLinks:animeGenres.length}};
+ return {scanned:pending.length,autoApproved:approvedIds.length,heldForReview:pending.length-approvedIds.length,holdReasons:reasons,titleRepairsApplied,titleRepairsFromWikidata,runId:run.data.id,reviewedSources:["wikidata"],reviewDatasetSizes:{allAnime:all.length,sourceExternalIds:external.length,genres:genres.length,animeGenreLinks:animeGenres.length}};
 }
 
 Deno.serve(async(req:Request)=>{
