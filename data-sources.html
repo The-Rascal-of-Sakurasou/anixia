@@ -188,10 +188,33 @@
     <p><a href="https://commons.wikimedia.org/wiki/Commons:Licensing" target="_blank" rel="noopener noreferrer">Wikimedia Commons：ライセンス</a> · <a href="https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia" target="_blank" rel="noopener noreferrer">Wikimedia Commons：外部サイトでの再利用</a></p>
   </section>
   <section class="anixia-section">
-    <h2>Annict</h2>
-    <p>Annict APIは作品情報の補完候補として扱います。2026年11月25日施行予定のAPI利用規約では、規約を守る限り商用・非商用を問わず無料で利用できます。ただし、APIが返す作品画像の著作権は各権利者にあり、Annictが画像利用を許諾するものではありません。そのため、ANIXIAではAnnict由来の画像URLを自動的にポスターとして転載しません。</p>
-    <p>作品情報の取得・保存・表示・再配布には同規約の条件を適用し、Annictのユーザー情報は取得対象にしません。</p>
+    <h2>Annict（利用条件の確認中）</h2>
+    <p><a href="https://annict.com/" target="_blank" rel="noopener noreferrer">Annict</a>は作品情報の補完候補です。API利用規約・保存・表示・再配布の条件をANIXIA側で確認し、利用範囲を承認するまでは自動取得を有効化しません。</p>
+    <p>APIが返す画像の著作権は各権利者に帰属します。API利用が可能であっても、画像をANIXIAに転載できるとは限らないため、画像は別途ライセンスを確認します。</p>
     <p><a href="https://annict.com/terms/api" target="_blank" rel="noopener noreferrer">Annict API利用規約</a></p>
+  </section>
+  <section class="anixia-section">
+    <h2>外部参照先の管理</h2>
+    <p>ANIXIAでは、作品ごとの外部参照先を作品データと分離して管理します。参照URL・外部ID・作品との一致確認状況・利用条件の審査状況を記録し、未確認の情報源から本文や画像を自動取得しません。</p>
+    <h3>配信サービス（リンク参照候補）</h3>
+    <ul>
+      <li><a href="https://www.netflix.com/jp/" target="_blank" rel="noopener noreferrer">Netflix</a></li>
+      <li><a href="https://www.primevideo.com/" target="_blank" rel="noopener noreferrer">Prime Video</a></li>
+      <li><a href="https://www.crunchyroll.com/" target="_blank" rel="noopener noreferrer">Crunchyroll</a></li>
+      <li><a href="https://www.hidive.com/" target="_blank" rel="noopener noreferrer">HIDIVE</a></li>
+    </ul>
+    <p>これらは作品ページへのリンク候補です。作品ページの文章・画像を転載する許可を意味しません。自動スクレイピング・本文保存・画像転載は、明示的な利用許諾または適用可能なライセンスを確認するまで行いません。</p>
+    <h3>作品メタデータの照合候補</h3>
+    <ul>
+      <li><a href="https://myanimelist.net/" target="_blank" rel="noopener noreferrer">MyAnimeList</a></li>
+      <li><a href="https://kitsu.app/" target="_blank" rel="noopener noreferrer">Kitsu</a></li>
+      <li><a href="https://anidb.net/" target="_blank" rel="noopener noreferrer">AniDB</a></li>
+      <li><a href="https://www.animenewsnetwork.com/" target="_blank" rel="noopener noreferrer">Anime News Network</a></li>
+      <li><a href="https://www.tvmaze.com/" target="_blank" rel="noopener noreferrer">TVmaze</a></li>
+      <li><a href="https://github.com/cedya77/anime-offline-database" target="_blank" rel="noopener noreferrer">Anime Offline Database community continuation</a></li>
+    </ul>
+    <p>各サービスのAPI・データセットについては、利用条件、帰属表示、保存期間、再配布条件を個別に審査します。審査が終わるまでは自動取得を無効にし、外部IDや参照URLの管理に用途を限定します。</p>
+    <p>既存のWikidata・MyAnimeList・AniListの外部IDと公式サイトURLについて、参照URLを管理テーブルへ移行しました。これらのURLは登録時点で未検証として扱い、作品との一致・リンクの到達性を順次確認します。</p>
   </section>
   <section class="anixia-section">
     <h2>画像・文章について</h2>
