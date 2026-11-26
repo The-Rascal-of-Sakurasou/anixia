@@ -17,6 +17,7 @@ on:
       - "anixia-admin.js"
       - "anixia-auth-pages.js"
       - "supabase/functions/**"
+      - "data-sources.html"
       - ".github/workflows/validate-anixia-core.yml"
 
 jobs:
@@ -54,7 +55,7 @@ jobs:
           const poster = readFileSync("supabase/functions/sync-anilist-posters/index.ts", "utf8");
           const catalog = readFileSync("supabase/functions/sync-anilist-catalog/index.ts", "utf8");
           const transparency = readFileSync("data-sources.html", "utf8");
-          const forbidden = /episode_count|titleJaUpdated|episodeCountUpdated|metadataPatch|media\\.episodes|media\\.status/;
+          const forbidden = /episode_count|titleJaUpdated|episodeCountUpdated|metadataPatch|media\.episodes|media\.status/;
           if (forbidden.test(poster)) throw new Error("AniList poster sync must not read or write catalog metadata.");
           if (!catalog.includes("SOURCE_POLICY_DISABLED") || !catalog.includes("410")) {
             throw new Error("AniList catalog ingestion must remain disabled.");
