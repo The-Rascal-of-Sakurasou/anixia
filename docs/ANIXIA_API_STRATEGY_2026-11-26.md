@@ -13,7 +13,7 @@ APIは数を増やすのではなく、1つの情報項目に対して主担当�
 - `public.anime`: 10,032件
 - 公開作品: 8,615件
 - 公開作品の日本語タイトル: 8,615件
-- 公開作品のポスター: 5,019件（58.5%）
+- 公開作品のポスター: 5,019件（58.3%）
 - 公開作品のあらすじ: 0件
 - 公開作品の公式サイトURL: 3,094件
 - `anime_external_ids`: Wikidata 8,767件、MyAnimeList 6,437件、AniList 3,361件
@@ -252,5 +252,7 @@ APIが返した値で、ANIXIA管理者が検証・修正した値を無条件�
 ## 8. 変更履歴
 
 - 2026-11-26: 本番DB、Edge Functions、Cron、Supabase Advisors、外部API利用規約を読み取り監査。
-- 2026-11-26: AniListポスター同期Cron（jobid 31）を停止し、停止状態を再確認。
+- 2026-11-26: AniListポスター同期Cron（jobid 31）を停止し、停止状態を再確認。`catalog_sources` も無効・pendingへ変更。
+- 2026-11-26: TMDB同期関数にソース承認チェックを追加し、Supabase Edge Function version 6としてデプロイ。現在TMDBソースは未承認のため同期不可。
+- 2026-11-26: Wikidata auto-reviewを毎時、Wikidata episode syncを30分ごとに変更。バックフィル完了後にさらに低頻度化する。
 - 2026-11-26: この文書はAPI方針の設計資料。既存ポスター・外部ID・作品レコードの一括削除やスキーマ変更は行っていない。
