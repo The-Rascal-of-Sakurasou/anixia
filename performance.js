@@ -1,4 +1,6 @@
 (()=>{try{
+  if(window.__ANIXIA_PERFORMANCE_INSTALLED__)return;
+  window.__ANIXIA_PERFORMANCE_INSTALLED__=true;
   // Establish connections only for origins this page actually uses.
   const scripts=Array.from(document.scripts).map(s=>s.src).filter(Boolean);
   const origins=[];
