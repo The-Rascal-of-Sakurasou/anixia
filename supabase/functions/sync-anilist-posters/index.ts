@@ -339,8 +339,9 @@ Deno.serve(async (req: Request) => {
   if (cronToken) {
     const stored = await db.from("catalog_sync_secrets").select("secret_hash").eq("id", 1).maybeSingle();
     if (stored.error) return json({ error: "Sync token validation failed." }, 500);
-    authorized = Boolean(stored.data?.secret_hash) &&
-      sameToken(await digestHex(cronToken), String(stored.data.secret_hash));
+    const storedHash = stored.data?.secret_hash;
+    authorized = typeof storedHash === "string" && storedHash.length > 0 &&
+      sameToken(await digestHex(cronToken), storedHash);
   }
   if (!authorized) {
     const authHeader = req.headers.get("Authorization") || "";
