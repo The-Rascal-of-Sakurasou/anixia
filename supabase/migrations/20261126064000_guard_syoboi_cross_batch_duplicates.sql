@@ -33,7 +33,7 @@ AS $function$
     SELECT DISTINCT
       lower(regexp_replace(normalize(coalesce(input_value, ''), NFKC),
         '[^[:alnum:]]+', '', 'g')) AS match_key
-    FROM unnest(coalesce(p_normalized_titles, ARRAY[]::text[])) AS input_value
+    FROM unnest(coalesce(p_normalized_titles, ARRAY[]::text[])) AS inputs(input_value)
   ),
   all_titles AS (
     SELECT a.id AS anime_id, a.title_ja AS title
