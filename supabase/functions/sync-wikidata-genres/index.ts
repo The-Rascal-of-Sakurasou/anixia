@@ -20,10 +20,16 @@ type AnyRecord = Record<string, any>;
 
 const CANONICAL_GENRES = new Map<string, string>([
   ["action", "Action"],
+  ["action anime and manga", "Action"],
   ["adventure", "Adventure"],
+  ["adventure anime and manga", "Adventure"],
   ["comedy", "Comedy"],
+  ["comedy anime and manga", "Comedy"],
   ["drama", "Drama"],
+  ["drama anime and manga", "Drama"],
   ["fantasy", "Fantasy"],
+  ["fantasy anime and manga", "Fantasy"],
+  ["science fiction anime and manga", "Science Fiction"],
   ["historical", "Historical"],
   ["horror", "Horror"],
   ["mystery", "Mystery"],
