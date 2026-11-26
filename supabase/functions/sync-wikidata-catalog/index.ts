@@ -351,7 +351,8 @@ Deno.serve(async(req:Request)=>{
    const check=await db.from("catalog_sync_secrets").select("secret_hash").eq("id",1).maybeSingle();
    if(check.error)throw check.error;
    const hash=await digestHex(token);
-   authorized=Boolean(check.data?.secret_hash)&&hash===check.data.secret_hash;
+   const storedHash=check.data?.secret_hash;
+   authorized=typeof storedHash==="string"&&storedHash.length>0&&hash===storedHash;
   }
   if(!authorized){
    const auth=req.headers.get("Authorization");
@@ -488,6 +489,7 @@ Deno.serve(async(req:Request)=>{
    const saved=importRows.length?await db.from("anime").upsert(importRows,{onConflict:"source,source_id",ignoreDuplicates:true}).select("id"):{data:[],error:null};
    if(saved.error)throw saved.error;
    // Keep all newly imported candidates private until an administrator reviews them.
+   let malIdsLinked=0;
    if(importRows.length){
     const sourceIds=importRows.map(row=>row.source_id);
     const imported=await db.from("anime").select("id,source_id").eq("source","wikidata").in("source_id",sourceIds);
@@ -505,7 +507,7 @@ Deno.serve(async(req:Request)=>{
      if(mapped.error)throw mapped.error;
     }
     const malMapping=await persistMalMappings(db,imported.data||[],incomingMalByQid);
-    var malIdsLinked=malMapping.linked;
+    malIdsLinked=malMapping.linked;
    }
    let autoReview:any={status:"scheduled_separately"};
    if(body?.runAutoReview===true){
