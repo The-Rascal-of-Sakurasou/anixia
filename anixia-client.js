@@ -142,7 +142,7 @@
   }
 
   async function getGenres() {
-    const result = await getClient().from("genres").select("id,name,name_ja,description,description_en").order("name_ja", { ascending: true });
+    const result = await getClient().from("genres").select("id,name,name_ja,description,description_en").eq("is_filterable", true).order("name_ja", { ascending: true });
     if (result.error) throw result.error;
     return result.data || [];
   }
@@ -463,7 +463,7 @@
   async function getAdminTaxonomy() {
     const db = getClient();
     const [genres, tags] = await Promise.all([
-      db.from("genres").select("id,name,name_ja,description").order("name_ja", { ascending: true }),
+      db.from("genres").select("id,name,name_ja,description").eq("is_filterable", true).order("name_ja", { ascending: true }),
       db.from("tags").select("id,name,name_ja,description").order("name_ja", { ascending: true })
     ]);
     if (genres.error || tags.error) throw genres.error || tags.error;
