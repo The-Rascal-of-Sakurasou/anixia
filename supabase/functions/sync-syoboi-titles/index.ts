@@ -122,7 +122,9 @@ Deno.serve(async (req: Request) => {
       const stored = await db.from("catalog_sync_secrets").select("secret_hash").eq("id", 1).maybeSingle();
       if (stored.error) throw stored.error;
       const incomingHash = await sha256(cronToken);
-      authorized = Boolean(stored.data?.secret_hash) && sameToken(incomingHash, String(stored.data.secret_hash));
+      const secretHash = stored.data?.secret_hash;
+      authorized = typeof secretHash === "string" && secretHash.length > 0 &&
+        sameToken(incomingHash, secretHash);
     }
     if (!authorized) {
       const auth = req.headers.get("Authorization");
