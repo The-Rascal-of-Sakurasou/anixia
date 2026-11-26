@@ -197,17 +197,53 @@ Deno.serve(async (req: Request) => {
       sourceIndex.set(key, values);
     }
 
-    const proposed: { anime: Row; tid: number }[] = [];
-    let ambiguousSourceTitles = 0;
-    let ambiguousAnimeTitles = 0;
+    const workKeysById = new Map<string, string[]>();
+    const candidateKeys = new Set<string>();
     for (const work of anime) {
       const keys = [...new Set([
         normalize(work.title_ja),
         normalize(work.title),
         ...(aliasesByAnime.get(text(work.id)) || []).map(normalize)
       ].filter(Boolean))];
-      const matched = new Set<number>();
+      workKeysById.set(text(work.id), keys);
       for (const key of keys) {
+        if ((sourceIndex.get(key) || []).length === 1) candidateKeys.add(key);
+      }
+    }
+
+    // Check all published records for title collisions, including records in
+    // other pages of this paginated sync. A per-batch reverse map alone can
+    // incorrectly assign one source TID to two different seasons/remakes.
+    const collisionResult = candidateKeys.size
+      ? await db.rpc("get_anime_title_collision_index", {
+        p_normalized_titles: [...candidateKeys]
+      })
+      : { data: [], error: null };
+    if (collisionResult.error) throw collisionResult.error;
+    const animeIdsByKey = new Map<string, Set<string>>();
+    for (const row of collisionResult.data || []) {
+      const key = text(row.normalized_title);
+      const animeId = text(row.anime_id);
+      if (!key || !animeId) continue;
+      const ids = animeIdsByKey.get(key) || new Set<string>();
+      ids.add(animeId);
+      animeIdsByKey.set(key, ids);
+    }
+    const reverseGlobal = new Map<number, Set<string>>();
+    for (const [key, animeIds] of animeIdsByKey) {
+      const tids = sourceIndex.get(key) || [];
+      if (tids.length !== 1) continue;
+      const ids = reverseGlobal.get(tids[0]) || new Set<string>();
+      for (const animeId of animeIds) ids.add(animeId);
+      reverseGlobal.set(tids[0], ids);
+    }
+
+    const proposed: { anime: Row; tid: number }[] = [];
+    let ambiguousSourceTitles = 0;
+    let ambiguousAnimeTitles = 0;
+    for (const work of anime) {
+      const matched = new Set<number>();
+      for (const key of workKeysById.get(text(work.id)) || []) {
         const tids = sourceIndex.get(key) || [];
         if (tids.length > 1) ambiguousSourceTitles++;
         if (tids.length === 1) matched.add(tids[0]);
@@ -215,10 +251,13 @@ Deno.serve(async (req: Request) => {
       if (matched.size === 1) proposed.push({ anime: work, tid: [...matched][0] });
       else if (matched.size > 1) ambiguousAnimeTitles++;
     }
-    const reverse = new Map<number, number>();
-    for (const pair of proposed) reverse.set(pair.tid, (reverse.get(pair.tid) || 0) + 1);
-    const safeMatches = proposed.filter(pair => reverse.get(pair.tid) === 1 &&
-      (!text(pair.anime.syobocal_tid) || text(pair.anime.syobocal_tid) === String(pair.tid)));
+    const ambiguousCatalogTitleKeys = [...animeIdsByKey.values()].filter(ids => ids.size > 1).length;
+    const safeMatches = proposed.filter(pair => {
+      const matchingAnimeIds = reverseGlobal.get(pair.tid);
+      return matchingAnimeIds?.size === 1 &&
+        matchingAnimeIds.has(text(pair.anime.id)) &&
+        (!text(pair.anime.syobocal_tid) || text(pair.anime.syobocal_tid) === String(pair.tid));
+    });
 
     const detailRows: Row[] = [];
     for (let start = 0; start < safeMatches.length; start += 100) {
@@ -255,6 +294,7 @@ Deno.serve(async (req: Request) => {
         safeExactMatches: safeMatches.length,
         ambiguousSourceTitles,
         ambiguousAnimeTitles,
+        ambiguousCatalogTitleKeys,
         detailRecords: detailRows.length,
         sample: preview,
         writesPerformed: 0
@@ -292,9 +332,23 @@ Deno.serve(async (req: Request) => {
         }
         if (Object.keys(changes).length) {
           const updated = await db.from("anime").update(changes).eq("id", pair.anime.id);
-          if (updated.error) throw updated.error;
-          if (changes.syobocal_tid) linked++;
-          if (changes.title_kana) kanaFilled++;
+          if (updated.error?.code === "23505" && changes.syobocal_tid) {
+            // The unique source-ID index is the final race-condition guard.
+            // Preserve safe kana enrichment even when another record claimed
+            // this TID between the global collision check and this update.
+            const fallbackChanges = { ...changes };
+            delete fallbackChanges.syobocal_tid;
+            if (Object.keys(fallbackChanges).length) {
+              const fallback = await db.from("anime").update(fallbackChanges).eq("id", pair.anime.id);
+              if (fallback.error) throw fallback.error;
+              if (fallbackChanges.title_kana) kanaFilled++;
+            }
+          } else if (updated.error) {
+            throw updated.error;
+          } else {
+            if (changes.syobocal_tid) linked++;
+            if (changes.title_kana) kanaFilled++;
+          }
         }
         const candidates = [
           { value: text(detail.ShortTitle), language: "ja", type: "short" },
@@ -349,6 +403,7 @@ Deno.serve(async (req: Request) => {
         aliasesInserted,
         ambiguousSourceTitles,
         ambiguousAnimeTitles,
+        ambiguousCatalogTitleKeys,
         source: "しょぼいカレンダー TitleLookup",
         note: "Only unique exact normalized-title matches are linked. Existing TIDs and non-empty kana values are preserved."
       });
