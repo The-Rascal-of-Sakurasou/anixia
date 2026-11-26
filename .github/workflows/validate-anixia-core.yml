@@ -50,6 +50,8 @@ jobs:
         run: deno check --no-lock supabase/functions/sync-anilist-catalog/index.ts
       - name: Check Wikidata catalog sync Edge Function
         run: deno check --no-lock supabase/functions/sync-wikidata-catalog/index.ts
+      - name: Check Syoboi title sync Edge Function
+        run: deno check --no-lock supabase/functions/sync-syoboi-titles/index.ts
       - name: Enforce AniList image-only source policy
         run: |
           node --input-type=module <<'NODE'
