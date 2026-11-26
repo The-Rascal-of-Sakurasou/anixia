@@ -45,7 +45,7 @@ function optimize(html, file) {
   // Treat versioned and relative performance.js URLs as the same script.
   // This prevents the optimizer from adding a second copy to pages that already
   // load performance.js with a cache-busting query string.
-  const hasPerformanceScript = /\\bsrc=[\"'][^\"']*performance\\.js(?:[?#][^\"']*)?[\"']/i.test(html);
+  const hasPerformanceScript = /\bsrc=["'][^"']*performance\.js(?:[?#][^"']*)?["']/i.test(html);
   if (needsPerformanceScript && !hasPerformanceScript) {
     html = html.replace(/<\/head>/i,
       '<script src="' + performanceScript + '" defer></script>\n</head>');
