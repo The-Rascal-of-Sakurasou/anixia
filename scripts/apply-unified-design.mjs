@@ -21,7 +21,7 @@ for (const file of allHtml) {
   const isRoot = !file.includes("/");
   const prefix = isRoot ? "/anixia/" : relative(dirname(file), ".").split(sep).join("/") + "/";
   if (!html.includes("anixia-unified-theme.css")) {
-    const tags = '\n<link rel="stylesheet" href="' + prefix + 'anixia-unified-theme.css?v=20261126-design1">\n<script src="' + prefix + 'anixia-global-header.js?v=20261126-design1" defer></script>\n';
+    const tags = '\n<link rel="stylesheet" href="' + prefix + 'anixia-unified-theme.css?v=20261126-design1">\n<script src="' + prefix + 'anixia-global-header.js?v=20261126-design2" defer></script>\n';
     const closeHead = html.toLowerCase().lastIndexOf("</head>");
     if (closeHead < 0) { skipped++; continue; }
     html = html.slice(0, closeHead) + tags + "</head>" + html.slice(closeHead + 7);
