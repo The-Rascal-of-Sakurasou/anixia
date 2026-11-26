@@ -241,7 +241,8 @@ async function ensureEntityRows(
 
   // Correct legacy Japanese labels only for tables that actually store one.
   // Some entity tables (notably series) use name_ro/name_en instead.
-  if (nameJaColumn) {
+  const mappedIds = [...new Set(ids.map(externalId => map.get(externalId)).filter(Boolean))];
+  if (nameJaColumn && mappedIds.length) {
     const current = await db.from(table).select("id," + nameJaColumn).in("id", mappedIds);
     if (current.error) throw current.error;
     const currentById = new Map((current.data || []).map((row: AnyRecord) => [String(row.id), row]));
