@@ -230,8 +230,9 @@ async function fetchAniListByMalIds(ids: number[]): Promise<Map<number, Media>> 
   return result;
 }
 
-async function findPostersBatch(works: Work[]): Promise<Map<string, Media | null>> {
+async function findPostersBatch(works: Work[]): Promise<{ posters: Map<string, Media | null>; unmatchedReasons: Map<string, string> }> {
   const posters = new Map<string, Media | null>();
+  const unmatchedReasons = new Map<string, string>();
   const directWorks = works.filter(work => /^\d+$/.test(String(work.anilist_id || "")));
   const directItems = await fetchAniListByIds(directWorks.map(work => Number(work.anilist_id)));
   // A stale or mismatched AniList ID must not block a valid MAL-ID lookup.
@@ -266,9 +267,16 @@ async function findPostersBatch(works: Work[]): Promise<Map<string, Media | null
     for (let i = 0; i < plan.terms.length; i++) {
       for (const media of results[cursor++] || []) found.set(media.id, media);
     }
-    posters.set(plan.work.id, chooseCandidate(plan.work, found));
+    const candidate = chooseCandidate(plan.work, found);
+    posters.set(plan.work.id, candidate);
+    if (!candidate) {
+      unmatchedReasons.set(
+        plan.work.id,
+        plan.terms.length ? candidateRejectionReason(plan.work, found) : "no_search_terms"
+      );
+    }
   }
-  return posters;
+  return { posters, unmatchedReasons };
 }
 
 const GENERIC_TITLE_TOKENS = new Set([
@@ -315,6 +323,23 @@ function chooseCandidate(work: Work, items: Map<number, Media>): Media | null {
   if (!scored.length) return null;
   if (scored.length > 1 && scored[0].score === scored[1].score) return null;
   return scored[0].item;
+}
+
+function candidateRejectionReason(work: Work, items: Map<number, Media>): string {
+  const candidates = [...items.values()];
+  if (!candidates.length) return "no_search_results";
+  if (candidates.every(item => item.isAdult === true)) return "adult_content_filtered";
+  if (candidates.every(item => {
+    const image = item.coverImage?.extraLarge || item.coverImage?.large;
+    return !image || !image.startsWith("https://s") || !image.includes(".anilist.co/");
+  })) return "missing_or_invalid_cover_image";
+  if (work.release_year && candidates.every(item => {
+    const year = yearOf(item);
+    return !year || Math.abs(year - work.release_year!) > 1;
+  })) return "release_year_mismatch";
+  if (candidates.every(item => !formatMatches(work.format, item.format || ""))) return "format_mismatch";
+  if (candidates.every(item => !titleMatchScore(work, item))) return "title_mismatch";
+  return "ambiguous_or_mixed_candidates";
 }
 async function digestHex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
@@ -445,12 +470,15 @@ Deno.serve(async (req: Request) => {
     }
   }
   const result = { scanned: (works || []).length, updated: 0, skipped: 0,
-    unmatched: [] as string[], errors: [] as string[] };
+    unmatched: [] as string[], unmatchedByReason: {} as Record<string, number>, errors: [] as string[] };
   const batchWorks = (works || []).filter((work: Work) =>
     !work.poster_url && (force || !work.poster_attempted_at || requestedIds.includes(work.id) || retryIds.has(work.id))) as Work[];
   let posters = new Map<string, Media | null>();
+  let unmatchedReasons = new Map<string, string>();
   try {
-    posters = await findPostersBatch(batchWorks);
+    const lookup = await findPostersBatch(batchWorks);
+    posters = lookup.posters;
+    unmatchedReasons = lookup.unmatchedReasons;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const rateLimited = /(?:\\b429\\b|rate limit|too many requests)/i.test(message);
@@ -482,6 +510,8 @@ Deno.serve(async (req: Request) => {
       const attemptedAt = new Date().toISOString();
       if (!media) {
         result.unmatched.push(work.title_ja || work.title);
+        const reason = unmatchedReasons.get(work.id) || "unknown";
+        result.unmatchedByReason[reason] = (result.unmatchedByReason[reason] || 0) + 1;
         const { error } = await db.from("anime").update({ poster_attempted_at: attemptedAt }).eq("id", work.id);
         if (error) throw error;
         continue;
