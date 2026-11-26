@@ -657,78 +657,81 @@ Deno.serve(async (req: Request) => {
           counts.staffLinks = staffRows.length;
         }
 
-        const excludedGenreNames = new Set([
-          "animated film", "anime film", "anime", "anthology series", "asmr",
-          "association football video game", "children's film", "children's television series",
-          "lgbt-related television series", "religious art", "visual novel", "mahjong manga",
-          "hentai", "crossover fiction", "speculative fiction"
+        // Only map verified, broad ANIXIA genre labels. Wikidata P136 also
+        // contains format labels (for example, "adventure television series")
+        // and unrelated media categories; those must never become anime genres.
+        // This allowlist deliberately reuses existing canonical ANIXIA rows and
+        // does not create new genre rows from unreviewed labels.
+        const canonicalGenreNames = new Map<string, string>([
+          ["action", "Action"],
+          ["adventure", "Adventure"],
+          ["comedy", "Comedy"],
+          ["drama", "Drama"],
+          ["fantasy", "Fantasy"],
+          ["historical", "Historical"],
+          ["horror", "Horror"],
+          ["mystery", "Mystery"],
+          ["romance", "Romance"],
+          ["science fiction", "Science Fiction"],
+          ["slice of life", "Slice of Life"],
+          ["sports", "Sports"],
+          ["supernatural", "Supernatural"],
+          ["suspense / thriller", "Suspense / Thriller"],
+          ["psychological", "Psychological"],
+          ["mecha", "Mecha"],
+          ["isekai", "isekai"],
+          ["music", "Music"],
+          ["crime", "Crime"],
+          ["dark fantasy", "dark fantasy"],
+          ["cyberpunk", "cyberpunk"],
+          ["steampunk", "steampunk"],
+          ["space opera", "space opera"],
+          ["post-apocalyptic anime and manga", "post-apocalyptic anime and manga"],
+          ["time-travel anime and manga", "time-travel anime and manga"],
+          ["magical girl anime and manga", "magical girl anime and manga"],
+          ["romantic comedy anime and manga", "romantic comedy anime and manga"],
+          ["school anime and manga", "school anime and manga"],
+          ["coming-of-age anime and manga", "coming-of-age anime and manga"],
+          ["black comedy", "black comedy"],
+          ["parody", "parody"],
+          ["satire", "satire"],
+          ["military science fiction", "military science fiction"],
+          ["cute girls doing cute things", "cute girls doing cute things"],
+          ["band anime and manga", "band anime and manga"],
+          ["idol anime and manga", "idol anime and manga"],
+          ["battle royale anime and manga", "battle royale anime and manga"],
+          ["survival anime and manga", "survival anime and manga"]
         ]);
         const genreEntities = [...genreById.values()].filter(e => {
-          const english = (label(e, "en") || "").toLocaleLowerCase();
-          return !excludedGenreNames.has(english);
+          const english = (label(e, "en") || "").trim().toLocaleLowerCase();
+          return canonicalGenreNames.has(english);
         });
-        const genreRows = genreEntities.map(e => ({
-          name: label(e, "en") || label(e, "ja"),
-          name_ja: canonicalGenreJapaneseLabel(japaneseLabel(e))
-        })).filter(r => r.name);
-
-        // Resolve exact Japanese labels to the existing canonical ANIXIA genre.
-        // This prevents Wikidata's differently named concepts from creating
-        // duplicate visible genres such as "Action" / "action anime and manga".
-        const genreNames = [...new Set(genreRows.map(r => r.name))];
-        const genreJapaneseNames = [...new Set(genreRows.map(r => r.name_ja).filter(Boolean))] as string[];
-        const [existingByName, existingByJapaneseName] = await Promise.all([
-          genreNames.length
-            ? db.from("genres").select("id,name,name_ja").in("name", genreNames)
-            : Promise.resolve({ data: [], error: null }),
-          genreJapaneseNames.length
-            ? db.from("genres").select("id,name,name_ja").in("name_ja", genreJapaneseNames)
-            : Promise.resolve({ data: [], error: null })
-        ]);
-        if (existingByName.error) throw existingByName.error;
-        if (existingByJapaneseName.error) throw existingByJapaneseName.error;
-
-        const knownNames = new Map((existingByName.data || []).map((r: AnyRecord) => [String(r.name), String(r.id)]));
-        const knownJapaneseNames = new Map((existingByJapaneseName.data || []).map((r: AnyRecord) => [String(r.name_ja), String(r.id)]));
-        const pendingByKey = new Map<string, AnyRecord>();
-        for (const row of genreRows) {
-          if (row.name_ja && knownJapaneseNames.has(row.name_ja)) continue;
-          if (knownNames.has(row.name)) continue;
-          const key = row.name_ja ? `ja:${row.name_ja}` : `name:${row.name}`;
-          if (!pendingByKey.has(key)) pendingByKey.set(key, row);
-        }
-        const pendingGenreRows = [...pendingByKey.values()];
-        if (pendingGenreRows.length) {
-          const saved = await db.from("genres").upsert(pendingGenreRows, { onConflict: "name", ignoreDuplicates: true });
-          if (saved.error) throw saved.error;
-        }
-
-        const [allByName, allByJapaneseName] = await Promise.all([
-          genreNames.length
-            ? db.from("genres").select("id,name,name_ja").in("name", genreNames)
-            : Promise.resolve({ data: [], error: null }),
-          genreJapaneseNames.length
-            ? db.from("genres").select("id,name,name_ja").in("name_ja", genreJapaneseNames)
-            : Promise.resolve({ data: [], error: null })
-        ]);
-        if (allByName.error) throw allByName.error;
-        if (allByJapaneseName.error) throw allByJapaneseName.error;
-        const genreIdByName = new Map((allByName.data || []).map((r: AnyRecord) => [String(r.name), String(r.id)]));
-        const genreIdByJapaneseName = new Map((allByJapaneseName.data || []).map((r: AnyRecord) => [String(r.name_ja), String(r.id)]));
+        const genreNames = [...new Set(genreEntities.map(e =>
+          canonicalGenreNames.get((label(e, "en") || "").trim().toLocaleLowerCase())!
+        ))];
+        const existingGenres = genreNames.length
+          ? await db.from("genres").select("id,name").in("name", genreNames)
+          : { data: [], error: null };
+        if (existingGenres.error) throw existingGenres.error;
+        const genreIdByName = new Map((existingGenres.data || []).map((r: AnyRecord) =>
+          [String(r.name), String(r.id)]
+        ));
         const genreQidToId = new Map<string, string>();
-        for (const e of genreEntities) {
-          const name = label(e, "en") || label(e, "ja");
-          const jaName = canonicalGenreJapaneseLabel(japaneseLabel(e));
-          const id = (jaName ? genreIdByJapaneseName.get(jaName) : null) || (name ? genreIdByName.get(name) : null);
-          if (id) genreQidToId.set(e.id, id);
+        for (const entity of genreEntities) {
+          const english = (label(entity, "en") || "").trim().toLocaleLowerCase();
+          const canonicalName = canonicalGenreNames.get(english);
+          const id = canonicalName ? genreIdByName.get(canonicalName) : null;
+          if (id) genreQidToId.set(entity.id, id);
         }
         const genreExternalRows = [...genreQidToId.entries()].map(([externalId, genreId]) => ({
           genre_id: genreId, source: SOURCE, external_id: externalId,
           source_url: WIKIDATA + externalId, last_verified_at: now
         }));
         if (genreExternalRows.length) {
+          // Update legacy mappings when an external genre ID was previously
+          // attached to a non-canonical genre row.
           const saved = await db.from("genre_external_ids").upsert(genreExternalRows, {
-            onConflict: "source,external_id", ignoreDuplicates: true
+            onConflict: "source,external_id"
           });
           if (saved.error) throw saved.error;
         }
