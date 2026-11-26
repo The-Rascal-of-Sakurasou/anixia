@@ -4,8 +4,8 @@
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const language = () => window.ANIXIA_LANG?.() || "ja";
   const messages = {
-    ja: {loading:"読み込み中…", empty:"作品データはまだありません。", failed:"作品情報を読み込めませんでした。時間をおいて再度お試しください。", retry:"再試行", year:"放送年未登録", genresEmpty:"ジャンルデータはまだありません。", genresFailed:"ジャンル情報を読み込めませんでした。", login:"ログイン", mypage:"マイページ"},
-    en: {loading:"Loading…", empty:"No titles are available yet.", failed:"Could not load titles. Please try again later.", retry:"Retry", year:"Year unknown", genresEmpty:"No genres are available yet.", genresFailed:"Could not load genres.", login:"Log in", mypage:"My Library"}
+    ja: {loading:"読み込み中…", empty:"作品データはまだありません。", failed:"作品情報を読み込めませんでした。時間をおいて再度お試しください。", retry:"再試行", year:"放送年未登録", genresEmpty:"ジャンルデータはまだありません。", genresFailed:"ジャンル情報を読み込めませんでした。", ratingsEmpty:"評価が5件以上ある作品はまだありません。", ratingsFailed:"評価ランキングを読み込めませんでした。", login:"ログイン", mypage:"マイページ"},
+    en: {loading:"Loading…", empty:"No titles are available yet.", failed:"Could not load titles. Please try again later.", retry:"Retry", year:"Year unknown", genresEmpty:"No genres are available yet.", genresFailed:"Could not load genres.", ratingsEmpty:"No titles have at least five ratings yet.", ratingsFailed:"Could not load the ratings ranking.", login:"Log in", mypage:"My Library"}
   };
   const t = () => messages[language()] || messages.ja;
   const hasJapanese = value => /[\u3040-\u30ff\u3400-\u9fff]/u.test(String(value||""));
@@ -38,6 +38,20 @@
       showRetryState(id, t().failed, () => loadSection(id, options));
     }
   }
+  async function loadRatings() {
+    try {
+      const rows = await ANIXIA.getRankings("rating", 5);
+      const el = $("rating-works");
+      if (!el) return;
+      el.innerHTML = rows.length
+        ? rows.map((work, index) => `<div class="anixia-home-ranked-card"><span class="anixia-home-rank-no">${String(index + 1).padStart(2, "0")}</span>${card(work)}</div>`).join("")
+        : `<p class="anixia-state">${esc(t().ratingsEmpty)}</p>`;
+    } catch (error) {
+      console.error(error);
+      showRetryState("rating-works", t().ratingsFailed, loadRatings);
+    }
+  }
+
   async function loadGenres() {
     try {
       const genres = await ANIXIA.getGenres();
@@ -82,6 +96,7 @@
       ANIXIA.getUser().catch(() => null),
       loadCatalogCount(),
       loadSection("popular-works", { sort: "newest", limit: 5 }),
+      loadRatings(),
       loadGenres()
     ]);
     $("account-link").textContent = userResult ? t().mypage : t().login;
