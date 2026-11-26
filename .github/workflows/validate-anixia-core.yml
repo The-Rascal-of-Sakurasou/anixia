@@ -52,6 +52,10 @@ jobs:
         run: deno check --no-lock supabase/functions/sync-wikidata-catalog/index.ts
       - name: Check Syoboi title sync Edge Function
         run: deno check --no-lock supabase/functions/sync-syoboi-titles/index.ts
+      - name: Check Wikidata enrichment Edge Function
+        run: deno check --no-lock supabase/functions/sync-wikidata-enrichment/index.ts
+      - name: Check Wikidata genre sync Edge Function
+        run: deno check --no-lock supabase/functions/sync-wikidata-genres/index.ts
       - name: Enforce AniList image-only source policy
         run: |
           node --input-type=module <<'NODE'
@@ -59,6 +63,7 @@ jobs:
           const poster = readFileSync("supabase/functions/sync-anilist-posters/index.ts", "utf8");
           const catalog = readFileSync("supabase/functions/sync-anilist-catalog/index.ts", "utf8");
           const wikidataCatalog = readFileSync("supabase/functions/sync-wikidata-catalog/index.ts", "utf8");
+          const wikidataGenres = readFileSync("supabase/functions/sync-wikidata-genres/index.ts", "utf8");
           const transparency = readFileSync("data-sources.html", "utf8");
           const forbidden = /episode_count|titleJaUpdated|episodeCountUpdated|metadataPatch|media\.episodes|media\.status/;
           if (forbidden.test(poster)) throw new Error("AniList poster sync must not read or write catalog metadata.");
@@ -76,6 +81,17 @@ jobs:
           if (reviewStart < 0 || !review.includes('.eq("source","wikidata").eq("is_published",false)') ||
               !review.includes('reviewedSources:["wikidata"]')) {
             throw new Error("Automatic catalog review must process Wikidata records only.");
+          }
+          const genreAllowlistStart = wikidataGenres.indexOf("const CANONICAL_GENRES");
+          const genreAllowlistEnd = wikidataGenres.indexOf("]);", genreAllowlistStart);
+          const genreAllowlist = wikidataGenres.slice(genreAllowlistStart, genreAllowlistEnd);
+          if (genreAllowlistStart < 0 || !genreAllowlist.includes('["action anime and manga", "Action"]') ||
+              /television series|film|movie|anthology series/i.test(genreAllowlist)) {
+            throw new Error("Wikidata genre sync must use the reviewed anime-genre allowlist, not media-format labels.");
+          }
+          if (!wikidataGenres.includes('rights_review_status') ||
+              !wikidataGenres.includes('CANONICAL_GENRES.has')) {
+            throw new Error("Wikidata genre sync must keep the source-rights gate and canonical mapping.");
           }
           if (!transparency.includes("AniList（作品画像の照合のみ）")) {
             throw new Error("Public source policy must disclose AniList image-only use.");
